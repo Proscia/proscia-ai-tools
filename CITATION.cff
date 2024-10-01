@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Baatz
+    given-names: Jeff
+    email: jeff.baatz@proscia.com
+  - family-names: Chivers
+    given-names: Corey
+    orcid: https://orcid.org/0000-0001-7290-2183
+    email: corey.chivers@proscia.com
+  - family-names: Ianni
+    given-names: Julianna
+    email: julianna@proscia.com
+  - family-names: Spurrier
+    given-names: Vaughn
+    email: vaughn.spurrier@proscia.com
+  - family-names: Toulgaridis
+    given-names: Kyriakos
+    email: kyriakos.toulgaridis@proscia.com
+  - family-names: Wahl
+    given-names: Casey
+    email: casey.wahl@proscia.com
+
+title: "Proscia AI Tools"
+version: 0.0.1
+date-released: 2024-09-30
