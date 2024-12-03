@@ -18,29 +18,43 @@ Through Concentriq® Embeddings, developers can access some of the most widely u
 Currently supported foundation models include:
 
 - DinoV2
-  - Model Tag: facebook/dinov2-base
+  - Model Tag: `facebook/dinov2-base`
   - Patch Size: 224
   - Embedding Dimension: 768
   - [🤗 HuggingFace page](https://huggingface.co/facebook/dinov2-base)
   - [Paper](https://arxiv.org/abs/2304.07193)
 - PLIP
-  - Model Tag: vinid/plip
+  - Model Tag: `vinid/plip`
   - Patch Size: 224
   - Embedding Dimension: 512
   - [🤗 HuggingFace page](https://huggingface.co/vinid/plip)
   - [Paper](https://www.nature.com/articles/s41591-023-02504-3)
 - ConvNext
-  - Model Tag: facebook/convnext-base-384-22k-1k
+  - Model Tag: `facebook/convnext-base-384-22k-1k`
   - Patch Size: 384
   - Embedding Dimension: 1024
   - [🤗 HuggingFace page](https://huggingface.co/facebook/convnext-base-384-22k-1k)
   - [Paper](https://arxiv.org/abs/2201.03545)
 - CTransPath
-  - Model Tag: 1aurent/swin_tiny_patch4_window7_224.CTransPath
+  - Model Tag: `1aurent/swin_tiny_patch4_window7_224.CTransPath`
   - Patch Size: 224
   - Embedding Dimension: 768
   - [🤗 HuggingFace page](https://huggingface.co/1aurent/swin_tiny_patch4_window7_224.CTransPath)
   - [Paper](https://www.sciencedirect.com/science/article/pii/S1361841522002043)
+- H-optimus-0
+  - Model Tag: `bioptimus/H-optimus-0`
+  - Patch Size: 224
+  - Embedding Dimension: 1536
+  - License: [Apache-2.0](https://choosealicense.com/licenses/apache-2.0/)
+  - [🤗 HuggingFace page](https://huggingface.co/bioptimus/H-optimus-0)
+  - [Paper](https://github.com/bioptimus/releases/tree/main/models/h-optimus/v0)
+- Virchow
+  - Model Tag: `paige-ai/Virchow`
+  - Patch Size: 224
+  - Embedding Dimension: 2560
+  - License: [Apache-2.0](https://choosealicense.com/licenses/apache-2.0/)
+  - [🤗 HuggingFace page](https://huggingface.co/paige-ai/Virchow)
+  - [Paper](https://arxiv.org/abs/2309.07778)
 
 ## Computational pathology development finally has a straightforward workflow
 
@@ -82,7 +96,7 @@ Discover the efficiency of the Concentriq® Embeddings workflow.
 from utils.client import ClientWrapper as Client
 
 ce_api_client = Client(url=endpoint, email=email, password=pwd)
-ticket_id = ce_api_client.embed_repos(ids=[1234], model="facebook/dinov2-base", mpp=1)
+ticket_id = ce_api_client.embed_repos(ids=[1234], model="bioptimus/H-optimus-0", mpp=1)
 embeddings = ce_api_client.get_embeddings(ticket_id)
 ```
 
