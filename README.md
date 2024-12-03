@@ -21,24 +21,28 @@ Currently supported foundation models include:
   - Model Tag: `facebook/dinov2-base`
   - Patch Size: 224
   - Embedding Dimension: 768
+  - License: [Apache-2.0](https://choosealicense.com/licenses/apache-2.0/)
   - [🤗 HuggingFace page](https://huggingface.co/facebook/dinov2-base)
   - [Paper](https://arxiv.org/abs/2304.07193)
 - PLIP
   - Model Tag: `vinid/plip`
   - Patch Size: 224
   - Embedding Dimension: 512
+  - License: [MIT](https://choosealicense.com/licenses/mit/)
   - [🤗 HuggingFace page](https://huggingface.co/vinid/plip)
   - [Paper](https://www.nature.com/articles/s41591-023-02504-3)
 - ConvNext
   - Model Tag: `facebook/convnext-base-384-22k-1k`
   - Patch Size: 384
   - Embedding Dimension: 1024
+  - License: [Apache-2.0](https://choosealicense.com/licenses/apache-2.0/)
   - [🤗 HuggingFace page](https://huggingface.co/facebook/convnext-base-384-22k-1k)
   - [Paper](https://arxiv.org/abs/2201.03545)
 - CTransPath
   - Model Tag: `1aurent/swin_tiny_patch4_window7_224.CTransPath`
   - Patch Size: 224
   - Embedding Dimension: 768
+  - License: [GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)
   - [🤗 HuggingFace page](https://huggingface.co/1aurent/swin_tiny_patch4_window7_224.CTransPath)
   - [Paper](https://www.sciencedirect.com/science/article/pii/S1361841522002043)
 - H-optimus-0
