@@ -90,7 +90,7 @@ class ClientWrapper:
         data = {"input_type": "image_ids", "input": ids, "mpp": mpp, "model": model}
         return self._submit_job(data)
 
-    def thumnail_images(self, ids: List[int]) -> str:
+    def thumbnail_images(self, ids: List[int]) -> str:
         """
         Submits a job to produce thumbnails of a list of images.
 
@@ -105,7 +105,7 @@ class ClientWrapper:
         data = {"input_type": "image_ids", "input": ids}
         return self._submit_job(data, thumbnails=True)
 
-    def thumnail_repos(self, ids: List[int]) -> str:
+    def thumbnail_repos(self, ids: List[int]) -> str:
         """
         Submits a job to produce thumbnails of a list of repository ids.
 
