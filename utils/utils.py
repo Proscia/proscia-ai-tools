@@ -1,9 +1,11 @@
+import io
 from typing import Any, Dict, List, Tuple
 
 import cv2
 import imageio
 import numpy as np
 import torch
+from PIL import Image
 
 
 class ShapeMismatchException(Exception):
@@ -14,6 +16,50 @@ class ShapeMismatchException(Exception):
 class SingleChannelException(Exception):
     def __init__(self) -> None:
         super().__init__("Mask must be single channel.")
+
+
+def create_overlay(mat: np.ndarray) -> np.ndarray:
+    """Create 4 channel image of `mat` as a heatmap.
+    Sets the alpha channel equal to zero where `mat` is zero
+
+    Parameters
+    ----------
+    mat : np.ndarray
+        Matrix to convert to heatmap. Must be 2D floating point and range from 0-1
+
+    Returns
+    -------
+    np.ndarray
+        Heatmap image with alpha channel
+    """
+    heatmap = cv2.applyColorMap((mat * 255).astype(np.uint8), cv2.COLORMAP_JET)
+    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_RGB2RGBA)
+    heatmap[..., 3] = (mat / mat.max() * 255).astype(np.uint8)
+    heatmap[mat == 0, 0] = 255
+    heatmap[mat == 0, 1] = 255
+    heatmap[mat == 0, 2] = 255
+    return heatmap
+
+
+def image_as_bytes(overlay: np.ndarray) -> bytes:
+    """Converts an image array to bytes.
+
+    Parameters
+    ----------
+    overlay : np.ndarray
+        Image array
+
+    Returns
+    -------
+    bytes
+        Image bytes
+    """
+    overlay = Image.fromarray(np.uint8(overlay))
+    overlay_bytes = io.BytesIO()
+    overlay.save(overlay_bytes, format="PNG", optimize=True, quality=85)
+    overlay_bytes = overlay_bytes.getvalue()
+    return overlay_bytes
 
 
 def overlay_mask(
