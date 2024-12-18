@@ -880,7 +880,7 @@ class ConcentriqLSClient:
                 resp=resp.text if resp is not None else None,
             )
 
-    def insert_annotaions_from_mask(
+    def insert_annotations_from_mask(
         self,
         image_id: int,
         mask: np.ndarray,
