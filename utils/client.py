@@ -1,4 +1,3 @@
-import base64
 import io
 import json
 import logging
@@ -524,7 +523,7 @@ class ConcentriqLSClient:
         self.endpoint = f"{url}/api"
         self.username = email
         self.password = password
-        self.session = self.basic_auth()
+        self.refresh_session()
 
         pagination_info["page"] = 1
         pagination_info["descending"] = pagination_info.get("descending", False)
@@ -534,14 +533,32 @@ class ConcentriqLSClient:
         self.pagination_info = pagination_info
         self.query_sleep = pagination_info.get("query_sleep", 0.2)
 
-    def basic_auth(self) -> requests.Session:
+    def catch_auth_exceptions(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
+            except HTTPError:
+                self.refresh_session()
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
+    def _get_token(self) -> None:
+        url = f"{self.endpoint}/v3/auth/token"
+        payload = {}
+        response = requests.request(
+            "POST", url, auth=HTTPBasicAuth(username=self.username, password=self.password), data=payload
+        )
+        self.token = response.json().get("token", None)
+
+    def refresh_session(self):
         session = requests.Session()
-        auth_ = bytes(f"{self.username}:{self.password}", "utf-8")
-        auth_header = "Basic {}".format(base64.b64encode(auth_).decode("utf-8"))
-        session.headers.update({"Authorization": auth_header})
+        self._get_token()
+        self.session = session
+        self.session.headers.update({"token": self.token})
 
-        return session
-
+    @catch_auth_exceptions
     def create_overlay(self, image_id: int, overlay_name: str, module_id=1) -> Dict:
         """Issue a HTTP POST request to create an overlay object for an image resource
         Parameters:
@@ -562,10 +579,11 @@ class ConcentriqLSClient:
         overlay_post_request_dict = {"name": overlay_name, "moduleId": module_id}
         url = f"{self.endpoint}/images/{int(image_id)}/overlays"
         overlay_post_response = self.session.post(url, json=overlay_post_request_dict)
-
+        overlay_post_response.raise_for_status()
         overlay_post_response = overlay_post_response.json()
         return overlay_post_response["data"]
 
+    @catch_auth_exceptions
     def sign_overlay_s3_url(self, overlay_id: int) -> str:
         """Signs an S3 URL for uploading an overlay.
 
@@ -582,6 +600,7 @@ class ConcentriqLSClient:
         signed_url = response.json()["signed_request"]
         return signed_url
 
+    @catch_auth_exceptions
     def upload_overlay(self, signed_url: str, overlay_data: bytes) -> None:
         """Uploads an overlay to S3.
 
@@ -609,6 +628,7 @@ class ConcentriqLSClient:
         signed_url = self.sign_overlay_s3_url(overlay["id"])
         self.upload_overlay(signed_url, io.BytesIO(image_data))
 
+    @catch_auth_exceptions
     def upload_xml_annotations(self, image_id: int, annotations: Annotations) -> None:
         """Creates annotations using the xml annotation import endpoint.
 
@@ -635,6 +655,7 @@ class ConcentriqLSClient:
                 resp=resp.text if resp is not None else None,
             )
 
+    @catch_auth_exceptions
     def get_image_data(self, image_id: int):
         """Get image data for an image resource in Concentriq
 
@@ -671,6 +692,7 @@ class ConcentriqLSClient:
         else:
             return image_data_get_response_dict["data"]
 
+    @catch_auth_exceptions
     def get_repo_data(self, target_repo_id: str) -> Dict:
         """Get metadata for requested repo in Concentriq
         Parameters:
@@ -706,6 +728,7 @@ class ConcentriqLSClient:
         else:
             return repo_data_get_response_dict["data"]
 
+    @catch_auth_exceptions
     def paginated_get_query(self, url: str, params: dict) -> Dict:
         """Method to perform series of queries with incremental page numbers to
         retreive all entities with default GET retrivel limited with pagination
@@ -731,6 +754,7 @@ class ConcentriqLSClient:
                 params["pagination"] = json.dumps(self.pagination_info)
                 try:
                     response = self.session.get(url, params=params)
+                    print(response.json())
                     response.raise_for_status()
                 except requests.exceptions.HTTPError as error:
                     self.log_http_error(
@@ -860,6 +884,7 @@ class ConcentriqLSClient:
         clean_error_message = {k: v for k, v in error_message.items() if v is not None}
         self.logger.error("%s", clean_error_message)
 
+    @catch_auth_exceptions
     def create_xml_annotations(self, image_id: int, annotations: Annotations):
         """Creates annotations using the xml annotation import endpoint."""
         resp = None
