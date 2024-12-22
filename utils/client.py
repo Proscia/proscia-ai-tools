@@ -525,7 +525,12 @@ class ConcentriqLSClient:
         self.endpoint = f"{url}/api"
         self.username = email
         self.password = password
-        self.refresh_session()
+
+        retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
+        self.session = requests.Session()
+        self.session.mount("http://", HTTPAdapter(max_retries=retries))
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+        self.refresh_client_token()
 
         pagination_info["page"] = 1
         pagination_info["descending"] = pagination_info.get("descending", False)
@@ -541,7 +546,7 @@ class ConcentriqLSClient:
             try:
                 return func(self, *args, **kwargs)
             except HTTPError:
-                self.refresh_session()
+                self.refresh_client_token()
                 return func(self, *args, **kwargs)
 
         return wrapper
@@ -554,12 +559,8 @@ class ConcentriqLSClient:
         )
         self.token = response.json().get("token", None)
 
-    def refresh_session(self):
-        retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
+    def refresh_client_token(self):
         self._get_token()
-        self.session = requests.Session()
-        self.session.mount("http://", HTTPAdapter(max_retries=retries))
-        self.session.mount("https://", HTTPAdapter(max_retries=retries))
         self.session.headers.update({"Authorization": f"Bearer {self.token}"})
 
     @catch_auth_exceptions
