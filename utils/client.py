@@ -9,9 +9,11 @@ from typing import Dict, List
 import imageio
 import numpy as np
 import requests
+from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from requests.models import HTTPError
 from safetensors import safe_open
+from urllib3.util.retry import Retry
 
 from concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
 from utils import utils
@@ -553,10 +555,12 @@ class ConcentriqLSClient:
         self.token = response.json().get("token", None)
 
     def refresh_session(self):
-        session = requests.Session()
+        retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
         self._get_token()
-        self.session = session
-        self.session.headers.update({"token": self.token})
+        self.session = requests.Session()
+        self.session.mount("http://", HTTPAdapter(max_retries=retries))
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+        self.session.headers.update({"Authorization": f"Bearer {self.token}"})
 
     @catch_auth_exceptions
     def create_overlay(self, image_id: int, overlay_name: str, module_id=1) -> Dict:
@@ -754,7 +758,6 @@ class ConcentriqLSClient:
                 params["pagination"] = json.dumps(self.pagination_info)
                 try:
                     response = self.session.get(url, params=params)
-                    print(response.json())
                     response.raise_for_status()
                 except requests.exceptions.HTTPError as error:
                     self.log_http_error(
