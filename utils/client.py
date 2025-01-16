@@ -4,7 +4,7 @@ import logging
 import os
 import time
 from functools import wraps
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import imageio
 import numpy as np
@@ -17,7 +17,7 @@ from urllib3.util.retry import Retry
 
 from concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
 from utils import utils
-from utils.annotations import Annotations, concentriq_annotation_to_xml, create_contour_annotation, mask2contours
+from utils.annotations import ConcentriqAnnotation, create_contour_annotation, mask2contours
 
 
 class GetException(Exception):
@@ -634,33 +634,6 @@ class ConcentriqLSClient:
         self.upload_overlay(signed_url, io.BytesIO(image_data))
 
     @catch_auth_exceptions
-    def upload_xml_annotations(self, image_id: int, annotations: Annotations) -> None:
-        """Creates annotations using the xml annotation import endpoint.
-
-        Parameters
-        ----------
-        image_id (int): The ID of the image.
-        annotations (Annotations): The annotations to upload.
-        """
-        resp = None
-        url = f"{self.endpoint}/images/{image_id}/annotations/import"
-        try:
-            files = {
-                "file": annotations.to_xml(encoding="UTF-8"),
-            }
-            resp = self.session.post(url, files=files)
-            resp.raise_for_status()
-        except requests.exceptions.HTTPError as error:
-            self.log_http_error(
-                error,
-                req={
-                    "path": url,
-                    "data": annotations.to_xml(pretty_print=True, encoding="UTF-8").decode(),
-                },
-                resp=resp.text if resp is not None else None,
-            )
-
-    @catch_auth_exceptions
     def get_image_data(self, image_id: int):
         """Get image data for an image resource in Concentriq
 
@@ -889,23 +862,124 @@ class ConcentriqLSClient:
         self.logger.error("%s", clean_error_message)
 
     @catch_auth_exceptions
-    def create_xml_annotations(self, image_id: int, annotations: Annotations):
-        """Creates annotations using the xml annotation import endpoint."""
+    def create_annotation(self, annotation: ConcentriqAnnotation) -> Dict:
+        """Creates an annotation.
+
+        Parameters
+        ----------
+        text (str): The name of the annotation.
+        color (str): The color of the annotation class in hex.
+
+        Returns
+        -------
+        dict: The created annotation
+        """
         resp = None
-        url = f"{self.endpoint}/images/{image_id}/annotations/import"
+        url = f"{self.endpoint}/annotations"
+        data = {
+            "imageId": annotation.imageId,
+            "annotationClassId": annotation.annotationClassId,
+            "shape": "free",
+            "text": annotation.text,
+            "shapeString": annotation.points.as_shapestring(),
+            "captureBounds": annotation.bounds.as_shapestring(),
+            "color": annotation.color.as_hex(),
+            "isNegative": annotation.isNegative,
+        }
         try:
-            files = {
-                "file": annotations.to_xml(encoding="UTF-8"),
-            }
-            resp = self.session.post(url, files=files)
+            resp = self.session.post(url, json=data)
             resp.raise_for_status()
+            return resp.json()
         except requests.exceptions.HTTPError as error:
             self.log_http_error(
                 error,
                 req={
                     "path": url,
-                    "data": annotations.to_xml(pretty_print=True, encoding="UTF-8").decode(),
+                    "data": data,
                 },
+                resp=resp.text if resp is not None else None,
+            )
+
+    @catch_auth_exceptions
+    def create_annotation_class(
+        self, annotation_class_name: str, description: str = "", color: str = "#000000"
+    ) -> Dict:
+        """Creates an annotation class.
+
+        Parameters
+        ----------
+        annotation_class_name (str): The name of the annotation class.
+        description (str): The description of the annotation class.
+        color (str): The color of the annotation class in hex.
+
+        Returns
+        -------
+        dict: The created annotation class.
+            example: {"name":"zzz","description":"this description","color":"#011FFF",
+            "createdBy":46,"lastUpdatedBy":46,"id":89,
+            "createdAt":"2025-01-06T00:48:15.555Z",
+            "lastUpdatedAt":"2025-01-06T00:48:15.555Z",
+            "sysPeriod":"[\"2025-01-06 00:48:15.555399+00\",)"}
+        """
+        resp = None
+        url = f"{self.endpoint}/v3/annotationClasses"
+        data = {"name": annotation_class_name, "description": description, "color": color}
+        try:
+            resp = self.session.post(url, json=data)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.HTTPError as error:
+            self.log_http_error(
+                error,
+                req={
+                    "path": url,
+                    "data": data,
+                },
+                resp=resp.text if resp is not None else None,
+            )
+
+    @catch_auth_exceptions
+    def add_annotation_class_to_repo(self, annotation_class_id: int, repo_id: int):
+        """Adds an annotation class to a repository.
+
+        Parameters
+        ----------
+        annotation_class_id (int): The ID of the annotation class.
+        repo_id (int): The ID of the repository.
+        """
+        resp = None
+        url = f"{self.endpoint}/v3/annotationClasses/{annotation_class_id}/imageSets/{repo_id}"
+        try:
+            resp = self.session.post(url)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.HTTPError as error:
+            self.log_http_error(
+                error,
+                req={"path": url},
+                resp=resp.text if resp is not None else None,
+            )
+
+    @catch_auth_exceptions
+    def assign_annotation_to_class(self, annotation_id: int, annotation_class_id: int):
+        """Assign an annotation to an annotation class.
+
+        Parameters
+        ----------
+        annotation_id (int): The ID of the annotation.
+        annotation_class_id (int): The ID of the annotation class.
+        """
+        resp = None
+        url = f"{self.endpoint}/annotations"
+        data = {"annotations": [{"annotationId": annotation_id, "annotationClassId": annotation_class_id}]}
+        try:
+            resp = self.session.patch(url, json=data)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.HTTPError as error:
+            self.log_http_error(
+                error,
+                req={"path": url},
                 resp=resp.text if resp is not None else None,
             )
 
@@ -917,7 +991,8 @@ class ConcentriqLSClient:
         annotation_name: str = "",
         color: str = "#0000FF",
         is_negative: bool = False,
-    ):
+        annotation_class_id: Optional[int] = None,
+    ) -> Dict:
         """Converts a mask image into annotations and inserts them into the Concentriq LS platform.
 
         Parameters
@@ -928,9 +1003,15 @@ class ConcentriqLSClient:
         annotation_name (str): The name of the annotation to be displayed in the platform.
         color (str): The color of the annotation.
         is_negative (bool): Whether the annotation is negative.
+        annotation_class_id (Optional[int]): The ID of the annotation class.
+
+        Returns
+        -------
+        dict: The created annotations.
         """
         image_data = self.get_image_data(image_id)
         image_mpp = image_data["mppx"]
+        w, h = image_data.get("imgWidth"), image_data.get("imgHeight")
 
         contours = mask2contours(mask)
         annotations = []
@@ -942,8 +1023,10 @@ class ConcentriqLSClient:
                 color=color,
                 is_negative=is_negative,
                 resize_ratio=mask_mpp / image_mpp,
+                img_height=h,
+                img_width=w,
+                annotation_class_id=annotation_class_id,
             )
+            annotations.append(self.create_annotation(annotation))
 
-            annotations.append(annotation)
-        annotation_payload = concentriq_annotation_to_xml(annotations)
-        self.create_xml_annotations(image_id, annotation_payload)
+        return annotations
