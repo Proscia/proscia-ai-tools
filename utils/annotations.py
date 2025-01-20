@@ -49,6 +49,7 @@ class ConcentriqAnnotation(pydantic.BaseModel):
     isNegative: bool
     color: Color
     isSegmenting: bool
+    annotationClassId: Optional[int]
     area: float
     """Area in micrometers. Defaults to zero if unspecified."""
 
@@ -291,6 +292,7 @@ def create_contour_annotation(
     img_width: Optional[int] = None,
     img_height: Optional[int] = None,
     resize_ratio: Optional[float] = None,
+    annotation_class_id: Optional[int] = None,
 ) -> ConcentriqAnnotation:
     """Create a free annotation from a contour.
 
@@ -325,6 +327,7 @@ def create_contour_annotation(
             resize_ratio = contour_mpp / native_mpp
         where the contour MPP is the microns-per-pixel at which the contour was generated (IE the source)
         and the native_mpp is the microns-per-pixel of the image on Concentriq (IE the destination)
+    annotation_class_id : Optional[int]
 
     Returns
     -------
@@ -360,5 +363,6 @@ def create_contour_annotation(
         color=color,
         isSegmenting=False,
         area=area,
+        annotationClassId=annotation_class_id,
     )
     return cx_annotation

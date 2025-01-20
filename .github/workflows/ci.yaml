@@ -1,0 +1,67 @@
+name: Continuous Test & Deployment
+
+on:
+  pull_request:
+    types:
+      - ready_for_review
+      - synchronize
+      - opened
+  push:
+    branches: ["main"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  lint:
+    name: Run Linting and Quality Checks
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Run pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run -a
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-20.04
+    env:
+      PYTHON_VERSION: "3.11"
+
+    steps:
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "${HOME}/.local/bin:$GITHUB_PATH" >> $GITHUB_PATH
+
+      - name: Cache poetry virtualenv
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install Project Dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry env use python${PYTHON_VERSION}
+          poetry install --with dev
+      - name: Tests
+        run: |
+          mkdir test-results
+          poetry run python -m pytest --junitxml=test-results/junit.xml --cov-report term

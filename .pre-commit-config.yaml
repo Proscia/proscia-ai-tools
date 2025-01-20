@@ -25,4 +25,4 @@ repos:
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        exclude: notebooks/zero-shot-classification.ipynb
+        args: ["--baseline", ".secrets.baseline"]

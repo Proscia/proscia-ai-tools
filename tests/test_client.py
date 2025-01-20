@@ -11,6 +11,7 @@ from concentriq_embeddings_client.models import (
     StatusResponse,
     SubmissionResponse,
 )
+from utils.client import ClientWrapper
 
 BASE_URL = "https://concentriq-for-research.com"
 TOKEN = os.getenv("CONCENTRIQ_TOKEN", default="fake_token")
@@ -107,7 +108,7 @@ def test_fetch_results(mock_get, client):
 
 @patch.object(ConcentriqEmbeddingsClient, "get_job_status")
 @patch.object(ConcentriqEmbeddingsClient, "fetch_results")
-def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_status):
+def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_status):  # noqa: C901
     # Initialize the client with dummy data
     client = ConcentriqEmbeddingsClient(base_url="https://fakeurl.com", token=TOKEN)
     ticket = "1234"
@@ -133,3 +134,107 @@ def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_
     assert result.images[1].image_id == 2
     assert result.images[0].status == "completed"
     assert result.images[1].status == "completed"
+    BASE_URL = "https://concentriq-for-research.com"
+    EMAIL = "test@example.com"
+    PASSWORD = "password"  # pragma: allowlist secret # noqa: S105
+    CACHE_DIR = "./data"
+
+    @pytest.fixture
+    def client_wrapper():
+        return ClientWrapper(url=BASE_URL, email=EMAIL, password=PASSWORD, cache_dir=CACHE_DIR)
+
+    @patch("requests.request")
+    def test_submit_job(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"ticket_id": "1234"}
+        data = {"input_type": "image_ids", "input": [1, 2, 3], "model": "facebook/dinov2-base", "mpp": 1.0}
+        ticket_id = client_wrapper._submit_job(data)
+        assert ticket_id == "1234"
+
+    @patch("requests.request")
+    def test_embed_images(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"ticket_id": "1234"}
+        ticket_id = client_wrapper.embed_images([1, 2, 3])
+        assert ticket_id == "1234"
+
+    @patch("requests.request")
+    def test_thumbnail_images(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"ticket_id": "1234"}
+        ticket_id = client_wrapper.thumbnail_images([1, 2, 3])
+        assert ticket_id == "1234"
+
+    @patch("requests.request")
+    def test_embed_roi(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"ticket_id": "1234"}
+        regions = [{"height": 512, "width": 512, "x": 0, "y": 0}]
+        ticket_id = client_wrapper.embed_roi(1, regions)
+        assert ticket_id == "1234"
+
+    @patch("requests.request")
+    def test_job_status(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"status": "completed"}
+        status = client_wrapper.job_status("1234")
+        assert status["status"] == "completed"
+
+    @patch("requests.request")
+    def test_load_results(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"images": [{"image_id": 1, "status": "completed"}]}
+        results = client_wrapper.load_results("1234")
+        assert len(results["images"]) == 1
+        assert results["images"][0]["image_id"] == 1
+
+    @patch("requests.get")
+    def test_download_embedding(mock_get, client_wrapper):
+        mock_get.return_value.content = b"fake_content"
+        path = client_wrapper.download_embedding("https://fakeurl.com/embedding")
+        assert os.path.exists(path)
+
+    @patch("safetensors.safe_open")
+    def test_load_embedding(mock_safe_open, client_wrapper):
+        mock_safe_open.return_value.__enter__.return_value.keys.return_value = ["key1"]
+        mock_safe_open.return_value.__enter__.return_value.get_tensor.return_value = "tensor"
+        tensors = client_wrapper.load_embedding("fake_path")
+        assert tensors["key1"] == "tensor"
+
+    @patch("requests.get")
+    def test_download_thumbnail(mock_get, client_wrapper):
+        mock_get.return_value.content = b"fake_content"
+        path = client_wrapper.download_thumbnail("https://fakeurl.com/thumbnail")
+        assert os.path.exists(path)
+
+    @patch("imageio.v2.imread")
+    def test_load_thumbnail(mock_imread, client_wrapper):
+        mock_imread.return_value = "fake_image"
+        thumbnail = client_wrapper.load_thumbnail("fake_path")
+        assert thumbnail == "fake_image"
+
+    @patch("requests.request")
+    def test_get_embeddings(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"status": "completed"}
+        mock_request.return_value.json.return_value = {"images": [{"image_id": 1, "status": "completed"}]}
+        embeddings = client_wrapper.get_embeddings("1234")
+        assert len(embeddings["images"]) == 1
+        assert embeddings["images"][0]["image_id"] == 1
+
+    @patch("requests.request")
+    def test_get_thumbnails(mock_request, client_wrapper):
+        mock_request.return_value.json.return_value = {"token": "new_token"}
+        client_wrapper.refresh_client_token()
+        mock_request.return_value.json.return_value = {"status": "completed"}
+        mock_request.return_value.json.return_value = {"thumbnails": [{"image_id": 1, "status": "completed"}]}
+        thumbnails = client_wrapper.get_thumbnails("1234")
+        assert len(thumbnails["thumbnails"]) == 1
+        assert thumbnails["thumbnails"][0]["image_id"] == 1
