@@ -106,10 +106,16 @@ embeddings = ce_api_client.get_embeddings(ticket_id)
 
 # Setup
 
-## Poetry
+## Poetry & Pyenv
 
-Instructions for installing poetry for dependency management and packaging in Python [are linked here](https://python-poetry.org/docs/).
+See instructions for using [pyenv](https://github.com/pyenv/pyenv-installer) for python environment management and installing [poetry](https://python-poetry.org/docs/) for dependency management and packaging in Python .
 
-```python
+## Quickstart
+
+```bash
+pyenv local 3.10
+poetry config virtualenvs.in-project true
+poetry env use 3.10
 poetry install --with dev
+poetry shell
 ```
