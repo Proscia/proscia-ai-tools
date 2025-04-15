@@ -3,7 +3,7 @@ import json
 import logging
 import time
 from functools import wraps
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import requests
@@ -372,6 +372,34 @@ class ConcentriqLSClient:
 
         images_response_dict = self.paginated_get_query(f"{self.endpoint}/images", images_request_filters)
         return images_response_dict["data"]
+
+    def get_annotations(
+        self, image_ids: List[int], annotationId: Optional[List[int]] = None, text: Optional[List[str]] = None
+    ):
+        """Get annotations from Concentriq
+
+        Parameters:
+        ----------
+        image_ids: "list" of image ids in Concentriq
+        annotationId: "list" of annotation ids in Concentriq. This is an optional filter.
+        text: "list" of annotation texts in Concentriq. This is an optional filter.
+
+        Returns:
+        -------
+        'dict' with annotations data.
+        """
+        filters = {"imageId": image_ids}
+        if annotationId is not None:
+            filters["annotationId"] = annotationId
+        if text is not None:
+            filters["text"] = text
+
+        annotations_request_filters = {"filters": json.dumps(filters)}
+        annotations_response_dict = self.paginated_get_query(
+            f"{self.endpoint}/annotations", params=annotations_request_filters
+        )
+
+        return annotations_response_dict["data"]
 
     def log_http_error(self, error: requests.exceptions.HTTPError, req=None, resp=None):
         """

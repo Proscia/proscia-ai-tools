@@ -172,6 +172,31 @@ def pixel_to_viewport(point: Tuple[float, float], img_height: int, img_width: in
     return (x, y)
 
 
+def viewport_to_pixel(point: Tuple[float, float], img_height: int, img_width: int) -> Tuple[float, float]:
+    """Converts a concentriq viewport coordinate to a pixel coordinate.
+
+    Parameters
+    ----------
+    point : Tuple[float, float]
+        Point in Concentriq viewport coordinates, (x,y).
+    img_height : int
+        Image height in pixels.
+    img_width : int
+        Image width in pixels.
+
+    Returns
+    -------
+    Tuple[float, float]
+        Point coordinates in pixel space.
+    """
+    aspect_ratio = float(img_height) / float(img_width)
+    width_conversion = img_width / 10000
+    height_conversion = img_height / (10000 * aspect_ratio)
+    x = point[0] * width_conversion
+    y = point[1] * height_conversion
+    return (x, y)
+
+
 def _contour_to_annotation_points(
     contour: Iterable[Iterable[int]], img_width: int, img_height: int
 ) -> Tuple[AnnotationShape, AnnotationBounds, float]:
