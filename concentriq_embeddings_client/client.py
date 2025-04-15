@@ -14,6 +14,22 @@ from concentriq_embeddings_client.models import (
 )
 
 
+class DetailedHTTPError(requests.exceptions.HTTPError):
+    """Custom HTTP error class to provide detailed error messages."""
+
+    def __init__(self, response: requests.Response):
+        self.response = response
+        self.status_code = response.status_code
+
+        try:
+            error_data = response.json()
+            self.message = error_data.get("message") or error_data.get("error") or str(error_data)
+        except ValueError:
+            self.message = response.text.strip()
+
+        super().__init__(f"{self.status_code} Error: {self.message}", response=response)
+
+
 class ConcentriqEmbeddingsClient:
     def __init__(self, base_url: str, token: str, api_version: str = "v1"):
         """Client for the Concentriq Embeddings service.
@@ -61,8 +77,11 @@ class ConcentriqEmbeddingsClient:
         """
         maybe_thumbnails = "/thumbnails" if thumbnails else ""
         url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/submit-job/"
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
+        try:
+            response = self.session.post(url, json=data)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise DetailedHTTPError(response) from e
         return SubmissionResponse(**response.json())
 
     def roi_selection(self, data: Dict) -> SubmissionResponse:
@@ -96,8 +115,11 @@ class ConcentriqEmbeddingsClient:
             response = client.submit_job(data)
         """
         url = f"{self.base_url}/embeddings/{self.api_version}/roi-selection/"
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
+        try:
+            response = self.session.post(url, json=data)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise DetailedHTTPError(response) from e
         return SubmissionResponse(**response.json())
 
     def estimate_job_cost(self, data: Dict) -> EstimationResponse:
@@ -118,8 +140,11 @@ class ConcentriqEmbeddingsClient:
             response = client.estimate_job_duation(data)
         """
         url = f"{self.base_url}/embeddings/{self.api_version}/estimate-job/"
-        response = self.session.post(url, json=data)
-        response.raise_for_status()
+        try:
+            response = self.session.post(url, json=data)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise DetailedHTTPError(response) from e
         return EstimationResponse(**response.json())
 
     def get_job_status(self, ticket: str, thumbnails: bool = False) -> StatusResponse:
@@ -134,8 +159,11 @@ class ConcentriqEmbeddingsClient:
         """
         maybe_thumbnails = "/thumbnails" if thumbnails else ""
         url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/status/{ticket}"
-        response = self.session.get(url)
-        response.raise_for_status()
+        try:
+            response = self.session.get(url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise DetailedHTTPError(response) from e
         return StatusResponse(**response.json())
 
     def fetch_results(self, ticket: str, offset: int = 0, limit: int = 100, thumbnails: bool = False) -> JobOutput:
@@ -152,8 +180,11 @@ class ConcentriqEmbeddingsClient:
         """
         maybe_thumbnails = "/thumbnails" if thumbnails else ""
         url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/results/{ticket}?offset={offset}&limit={limit}"
-        response = self.session.get(url)
-        response.raise_for_status()
+        try:
+            response = self.session.get(url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise DetailedHTTPError(response) from e
         if thumbnails:
             return ThumbnailsJobOutput(**response.json())
         else:

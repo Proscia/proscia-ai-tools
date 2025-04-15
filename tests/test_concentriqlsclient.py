@@ -121,3 +121,11 @@ def test_insert_annotations_from_mask(mock_get, mock_post, ls_client):
     mask[10:20, 10:20] = 1
     annotations = ls_client.insert_annotations_from_mask(image_id=1, mask=mask, mask_mpp=0.5)
     assert annotations[0]["id"] == 1
+
+
+@patch("requests.Session.get")
+def test_get_annotations(mock_get, ls_client):
+    mock_get.return_value = mock_response(json_data='{"data": {"annotations": [{"id": 1, "name": "annotation"}]}}')
+    annotations = ls_client.get_annotations(image_ids=[1])
+    assert annotations["annotations"][0]["id"] == 1
+    assert annotations["annotations"][0]["name"] == "annotation"

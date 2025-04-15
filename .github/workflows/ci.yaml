@@ -17,7 +17,7 @@ permissions:
 jobs:
   lint:
     name: Run Linting and Quality Checks
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Set up Python 3.11
@@ -34,7 +34,7 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     env:
       PYTHON_VERSION: "3.11"
 
