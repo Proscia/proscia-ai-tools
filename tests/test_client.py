@@ -200,6 +200,12 @@ def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_
         path = client_wrapper.download_embedding("https://fakeurl.com/embedding")
         assert os.path.exists(path)
 
+    @patch("requests.get")
+    def test_download_failed_embedding(mock_get, client_wrapper):
+        mock_get.return_value.content = None
+        path = client_wrapper.download_embedding(None)
+        assert path is None
+
     @patch("safetensors.safe_open")
     def test_load_embedding(mock_safe_open, client_wrapper):
         mock_safe_open.return_value.__enter__.return_value.keys.return_value = ["key1"]
@@ -212,6 +218,12 @@ def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_
         mock_get.return_value.content = b"fake_content"
         path = client_wrapper.download_thumbnail("https://fakeurl.com/thumbnail")
         assert os.path.exists(path)
+
+    @patch("requests.get")
+    def test_download_failed_thumbnail(mock_get, client_wrapper):
+        mock_get.return_value.content = None
+        path = client_wrapper.download_thumbnail(None)
+        assert path is None
 
     @patch("imageio.v2.imread")
     def test_load_thumbnail(mock_imread, client_wrapper):
