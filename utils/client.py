@@ -236,7 +236,7 @@ class ClientWrapper:
             for image in images:
                 local_embedding_path = image.get("local_embedding_path", None)
                 if download_embeddings:
-                    local_embedding_path = self.download_embedding(image["embeddings_url"])
+                    local_embedding_path = self.download_embedding(image.get("embeddings_url", None))
                 if load_embeddings and local_embedding_path is not None:
                     embedding = self.load_embedding(local_embedding_path)
                     image.update({"embedding": embedding})
@@ -267,6 +267,8 @@ class ClientWrapper:
         -------
         dict: The embeddings.
         """
+        if embeddings_url is None:
+            return None
         fname = os.path.basename(embeddings_url).split("?")[0]
         path = os.path.join(self.cache_dir, fname)
         if not os.path.exists(path):
@@ -309,6 +311,8 @@ class ClientWrapper:
         -------
         str: The path to the thumbnail image.
         """
+        if thumbnail_url is None:
+            return None
         fname = os.path.basename(thumbnail_url).split("?")[0]
         local_path = os.path.join(self.cache_dir, fname)
         if not os.path.exists(local_path):
@@ -421,7 +425,7 @@ class ClientWrapper:
             for image in images:
                 local_thumbnail_path = image.get("local_thumbnail_path", None)
                 if download_thumbnails:
-                    local_thumbnail_path = self.download_thumbnail(image["thumb_url"])
+                    local_thumbnail_path = self.download_thumbnail(image.get("thumb_url", None))
                 if load_thumbnails and local_thumbnail_path is not None:
                     thumbnail = self.load_thumbnail(local_thumbnail_path)
                     image.update({"thumbnail": thumbnail})
