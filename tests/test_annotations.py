@@ -1,7 +1,7 @@
 import pytest
 from pydantic_extra_types.color import Color
 
-from utils import annotations
+from proscia_ai_tools import annotations
 
 
 def test_valid_short_hex_color():

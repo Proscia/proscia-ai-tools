@@ -1,11 +1,10 @@
 [tool.poetry]
-name = "concentriq-embeddings-python"
+name = "proscia-ai-tools"
 version = "0.0.1"
 description = "This is a software contains python code to interact with the Proscia Foundation Embedder API."
 authors = ["Proscia AI Team <ai_team@proscia.com>"]
 packages = [
-  {include = "utils"},
-  {include = "concentriq_embeddings_client"}
+  {include = "proscia_ai_tools"},
 ]
 
 [tool.poetry.dependencies]
@@ -16,16 +15,7 @@ pytest-mock = "^3.14.0"
 pydantic-xml = "^2.13.1"
 pydantic-extra-types = "^2.10.0"
 transformers = "^4.46.1"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-pytest-cov = "^4.0.0"
-mypy = "^1.5.1"
-pre-commit = "^3.4.0"
-tox = "^4.11.1"
 opencv-python-headless = "^4.9.0"
-imageio = "^2.34"
-requests = "^2.31"
 pandas = "2.2.1"
 numpy = "1.26.4"
 safetensors = "^0.4.2"
@@ -37,6 +27,16 @@ matplotlib = "^3.8.1"
 umap-learn = "^0.5.5"
 tqdm = "^4.66.2"
 notebook = "^7.2.2"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+mypy = "^1.5.1"
+pre-commit = "^3.4.0"
+tox = "^4.11.1"
+imageio = "^2.34"
+requests = "^2.31"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.4.2"

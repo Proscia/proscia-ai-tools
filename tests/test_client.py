@@ -4,14 +4,14 @@ from unittest.mock import patch
 import pytest
 from requests.models import Response
 
-from concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
-from concentriq_embeddings_client.models import (
+from proscia_ai_tools.client import ClientWrapper
+from proscia_ai_tools.concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
+from proscia_ai_tools.concentriq_embeddings_client.models import (
     EstimationResponse,
     JobOutput,
     StatusResponse,
     SubmissionResponse,
 )
-from utils.client import ClientWrapper
 
 BASE_URL = "https://concentriq-for-research.com"
 TOKEN = os.getenv("CONCENTRIQ_TOKEN", default="fake_token")

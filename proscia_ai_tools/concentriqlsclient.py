@@ -12,8 +12,8 @@ from requests.auth import HTTPBasicAuth
 from requests.models import HTTPError
 from urllib3.util.retry import Retry
 
-from utils import utils
-from utils.annotations import ConcentriqAnnotation, create_contour_annotation, mask2contours
+from proscia_ai_tools import utils
+from proscia_ai_tools.annotations import ConcentriqAnnotation, create_contour_annotation, mask2contours
 
 
 class GetException(Exception):
