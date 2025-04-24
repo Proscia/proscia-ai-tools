@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from utils.concentriqlsclient import ConcentriqLSClient
+from proscia_ai_tools.concentriqlsclient import ConcentriqLSClient
 
 BASE_URL = "https://concentriq-for-research.com"
 EMAIL = "test@example.com"
@@ -41,8 +41,8 @@ def test_sign_overlay_s3_url(mock_get, ls_client):
     assert signed_url == "https://signed.url"
 
 
-@patch("utils.utils.create_overlay")
-@patch("utils.utils.image_as_bytes")
+@patch("proscia_ai_tools.utils.create_overlay")
+@patch("proscia_ai_tools.utils.image_as_bytes")
 @patch("requests.Session.post")
 @patch("requests.Session.get")
 @patch("requests.Session.put")

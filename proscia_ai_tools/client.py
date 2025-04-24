@@ -11,7 +11,7 @@ from requests.auth import HTTPBasicAuth
 from requests.models import HTTPError
 from safetensors import safe_open
 
-from concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
+from proscia_ai_tools.concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
 
 
 class GetException(Exception):

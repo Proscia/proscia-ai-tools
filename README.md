@@ -97,7 +97,7 @@ Data bookkeeping is greatly simplified. Concentriq® Embeddings tiles each slide
 Discover the efficiency of the Concentriq® Embeddings workflow.
 
 ```python
-from utils.client import ClientWrapper as Client
+from proscia_ai_tools.client import ClientWrapper as Client
 
 ce_api_client = Client(url=endpoint, email=email, password=pwd)
 ticket_id = ce_api_client.embed_repos(ids=[1234], model="bioptimus/H-optimus-0", mpp=1)
@@ -106,16 +106,8 @@ embeddings = ce_api_client.get_embeddings(ticket_id)
 
 # Setup
 
-## Poetry & Pyenv
-
-See instructions for using [pyenv](https://github.com/pyenv/pyenv-installer) for python environment management and installing [poetry](https://python-poetry.org/docs/) for dependency management and packaging in Python .
-
 ## Quickstart
 
 ```bash
-pyenv local 3.10
-poetry config virtualenvs.in-project true
-poetry env use 3.10
-poetry install --with dev
-poetry shell
+pip install git+https://github.com/Proscia/proscia-ai-tools.git
 ```

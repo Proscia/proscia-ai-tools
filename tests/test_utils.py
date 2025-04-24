@@ -2,7 +2,7 @@ import imageio.v2 as imageio
 import numpy as np
 import pytest
 
-from utils.utils import (
+from proscia_ai_tools.utils import (
     ShapeMismatchException,
     SingleChannelException,
     calculate_boolean_metrics,
@@ -16,7 +16,7 @@ from utils.utils import (
 def test_overlay_mask():
     import numpy as np
 
-    from utils.utils import overlay_mask
+    from proscia_ai_tools.utils import overlay_mask
 
     blend = np.random.rand(100, 100, 3)
     mask = np.random.rand(100, 100)
@@ -27,7 +27,7 @@ def test_overlay_mask():
 def test_overlay_mask_wrong_shape():
     import numpy as np
 
-    from utils.utils import overlay_mask
+    from proscia_ai_tools.utils import overlay_mask
 
     blend = np.random.rand(100, 100, 3)
     mask = np.random.rand(150, 150, 3)
@@ -38,7 +38,7 @@ def test_overlay_mask_wrong_shape():
 def test_overlay_mask_wrong_channel():
     import numpy as np
 
-    from utils.utils import overlay_mask
+    from proscia_ai_tools.utils import overlay_mask
 
     blend = np.random.rand(100, 100, 3)
     mask = np.random.rand(100, 100, 3)
@@ -49,7 +49,7 @@ def test_overlay_mask_wrong_channel():
 def test_parse():
     import torch
 
-    from utils.utils import parse
+    from proscia_ai_tools.utils import parse
 
     emb_dict = {"0_0": torch.rand(10), "0_1": torch.rand(10)}
     sorted_keys, coordinates = parse(emb_dict)
@@ -60,7 +60,7 @@ def test_parse():
 def test_stack_embedding():
     import torch
 
-    from utils.utils import stack_embedding
+    from proscia_ai_tools.utils import stack_embedding
 
     emb_dict = {"0_0": torch.rand(10), "0_1": torch.rand(10)}
     sorted_keys, coordinates = parse(emb_dict)

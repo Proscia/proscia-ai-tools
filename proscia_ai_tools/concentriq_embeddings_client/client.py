@@ -5,7 +5,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from concentriq_embeddings_client.models import (
+from proscia_ai_tools.concentriq_embeddings_client.models import (
     EstimationResponse,
     JobOutput,
     StatusResponse,
