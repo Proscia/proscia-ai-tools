@@ -97,14 +97,14 @@ class ConcentriqLSClient:
         self.session.headers.update({"Authorization": f"Bearer {self.token}"})
 
     @catch_auth_exceptions
-    def create_overlay(self, image_id: int, overlay_name: str, module_id=1) -> Dict:
+    def create_overlay(self, image_id: int, overlay_name: str, module_name: str = "proscia-ai-tools") -> Dict:
         """Issue a HTTP POST request to create an overlay object for an image resource
         Parameters:
         -----------
         image_id: "int" of the Concentriq image id for which the overlay is
             being uploaded.
         overlay_name: "str" of overlay name
-        module_id: "int" of the module id for the overlay
+        module_name: "str" of the module name to be associated with the overlay. The module will be created if it does not exist.
 
         Returns:
         --------
@@ -114,12 +114,64 @@ class ConcentriqLSClient:
         -------
         Exception in case of HTTP POST request failure.
         """
-        overlay_post_request_dict = {"name": overlay_name, "moduleId": module_id}
+        if not self.module_exists(module_name):
+            module = self.create_module(module_name)
+            self.module_id = module["id"]
+        overlay_post_request_dict = {"name": overlay_name, "moduleId": self.module_id}
         url = f"{self.endpoint}/images/{int(image_id)}/overlays"
         overlay_post_response = self.session.post(url, json=overlay_post_request_dict)
         overlay_post_response.raise_for_status()
         overlay_post_response = overlay_post_response.json()
         return overlay_post_response["data"]
+
+    def list_modules(self, filters: Optional[dict] = None) -> List[Dict]:
+        """Method to list available modules in the platform
+
+        Returns:
+            List[Dict]: List of available modules
+        """
+        pagination_v2 = {
+            "pageSize": 100,
+            "page": 0,
+            "orderBy": "id",
+            "orderDirection": "desc",
+        }
+        params = {"pagination": json.dumps(pagination_v2)}
+        if filters is not None:
+            filters = json.dumps(filters)
+            params["filters"] = filters
+        available_modules = self.paginated_get_query(f"{self.endpoint}/v2/modules", params=params)
+        return available_modules.get("results", [])
+
+    def module_exists(self, module_name: str) -> bool:
+        """Method that checks if a module exists in the platform
+
+        Args:
+            module_name (str): The name of the module to check for
+
+        Returns:
+            bool: True if the module exists, False otherwise
+        """
+        available_modules = self.list_modules(filters={"name": [module_name]})
+        for module in available_modules:
+            if module["name"] == module_name:
+                self.module_id = module["id"]
+                return True
+        return False
+
+    def create_module(self, module_name: str) -> Dict:
+        """Method that creates a module on the platform
+
+        Args:
+            module_name (str): The name of the module to be created
+
+        Returns:
+            Dict: The created module
+        """
+        payload = {"name": module_name, "isActive": True}
+        module = self.session.post(f"{self.endpoint}/v2/modules", json=payload)
+        module.raise_for_status()
+        return module.json()
 
     @catch_auth_exceptions
     def sign_overlay_s3_url(self, overlay_id: int) -> str:
@@ -151,7 +203,9 @@ class ConcentriqLSClient:
         response = self.session.put(signed_url, data=overlay_data, headers={"Authorization": None})
         response.raise_for_status()
 
-    def insert_heatmap_overlay(self, image_id: int, heatmap: np.ndarray, result_name: str) -> None:
+    def insert_heatmap_overlay(
+        self, image_id: int, heatmap: np.ndarray, result_name: str, module_name: str = "proscia-ai-tools"
+    ) -> None:
         """Inserts a heatmap overlay into the Concentriq LS platform.
 
         Parameters
@@ -159,10 +213,11 @@ class ConcentriqLSClient:
         image_id (int): The ID of the image.
         heatmap (np.ndarray): The heatmap to overlay.
         result_name (str): The name of the overlay to be displayed in the platform.
+        module_name (str): The name of the module to be associated with the overlay. The module will be created if it does not exist.
         """
         img = utils.create_overlay(heatmap)
         image_data = utils.image_as_bytes(img)
-        overlay = self.create_overlay(image_id, result_name)
+        overlay = self.create_overlay(image_id, result_name, module_name)
         signed_url = self.sign_overlay_s3_url(overlay["id"])
         self.upload_overlay(signed_url, io.BytesIO(image_data))
 

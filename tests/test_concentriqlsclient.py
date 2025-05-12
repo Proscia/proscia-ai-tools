@@ -28,10 +28,25 @@ def ls_client():
 
 @patch("requests.Session.post")
 def test_create_overlay(mock_post, ls_client):
+    ls_client.module_exists = MagicMock(return_value=True)
+    ls_client.update_module = MagicMock(return_value={"id": 1})
+    mock_post.return_value = mock_response(json_data='{"data": {"id": 1, "name": "overlay"}}')
+    ls_client.module_id = 1
+    response = ls_client.create_overlay(image_id=1, overlay_name="overlay")
+    assert response["id"] == 1
+    assert response["name"] == "overlay"
+
+
+@patch("requests.Session.post")
+def test_create_overlay_no_module(mock_post, ls_client):
+    ls_client.module_exists = MagicMock(return_value=False)
+    ls_client.update_module = MagicMock(return_value={"id": 1})
+    ls_client.create_module = MagicMock(return_value={"id": 1})
     mock_post.return_value = mock_response(json_data='{"data": {"id": 1, "name": "overlay"}}')
     response = ls_client.create_overlay(image_id=1, overlay_name="overlay")
     assert response["id"] == 1
     assert response["name"] == "overlay"
+    assert ls_client.create_module.called
 
 
 @patch("requests.Session.get")
@@ -49,6 +64,8 @@ def test_sign_overlay_s3_url(mock_get, ls_client):
 def test_insert_heatmap_overlay(mock_put, mock_get, mock_post, mock_image_as_bytes, mock_create_overlay, ls_client):
     mock_create_overlay.return_value = "fake_image"
     mock_image_as_bytes.return_value = b"fake_image_data"
+    ls_client.create_module = MagicMock(return_value={"id": 1})
+    ls_client.update_module = MagicMock(return_value={"id": 1})
     mock_put.return_value = mock_response(json_data="{}")
     mock_post.return_value = mock_response(json_data='{"data": {"id": 1}}')
     mock_get.return_value = mock_response(json_data='{"signed_request": "https://signed.url"}')
