@@ -476,23 +476,6 @@ files = [
 ]
 
 [[package]]
-name = "comm"
-version = "0.2.2"
-description = "Jupyter Python Comm implementation, for usage in ipykernel, xeus-python etc."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "comm-0.2.2-py3-none-any.whl", hash = "sha256:e6fb86cb70ff661ee8c9c14e7d36d6de3b4066f1441be4063df9c5009f0a64d3"},
-    {file = "comm-0.2.2.tar.gz", hash = "sha256:3fd7a84065306e07bea1773df6eb8282de51ba82f77c72f9c85716ab11fe980e"},
-]
-
-[package.dependencies]
-traitlets = ">=4"
-
-[package.extras]
-test = ["pytest"]
-
-[[package]]
 name = "contourpy"
 version = "1.3.2"
 description = "Python library for calculating contours of 2D quadrilateral grids"
@@ -1144,24 +1127,25 @@ files = [
 
 [[package]]
 name = "ipywidgets"
-version = "8.1.7"
-description = "Jupyter interactive widgets"
+version = "7.7.1"
+description = "IPython HTML widgets for Jupyter"
 optional = false
-python-versions = ">=3.7"
+python-versions = "*"
 files = [
-    {file = "ipywidgets-8.1.7-py3-none-any.whl", hash = "sha256:764f2602d25471c213919b8a1997df04bef869251db4ca8efba1b76b1bd9f7bb"},
-    {file = "ipywidgets-8.1.7.tar.gz", hash = "sha256:15f1ac050b9ccbefd45dccfbb2ef6bed0029d8278682d569d71b8dd96bee0376"},
+    {file = "ipywidgets-7.7.1-py2.py3-none-any.whl", hash = "sha256:aa1076ab7102b2486ae2607c43c243200a07c17d6093676c419d4b6762489a50"},
+    {file = "ipywidgets-7.7.1.tar.gz", hash = "sha256:5f2fa1b7afae1af32c88088c9828ad978de93ddda393d7ed414e553fee93dcab"},
 ]
 
 [package.dependencies]
-comm = ">=0.1.3"
-ipython = ">=6.1.0"
-jupyterlab_widgets = ">=3.0.15,<3.1.0"
+ipykernel = ">=4.5.1"
+ipython = {version = ">=4.0.0", markers = "python_version >= \"3.3\""}
+ipython-genutils = ">=0.2.0,<0.3.0"
+jupyterlab-widgets = {version = ">=1.0.0", markers = "python_version >= \"3.6\""}
 traitlets = ">=4.3.1"
-widgetsnbextension = ">=4.0.14,<4.1.0"
+widgetsnbextension = ">=3.6.0,<3.7.0"
 
 [package.extras]
-test = ["ipykernel", "jsonschema", "pytest (>=3.6.0)", "pytest-cov", "pytz"]
+test = ["mock", "pytest (>=3.6.0)", "pytest-cov"]
 
 [[package]]
 name = "isoduration"
@@ -4602,16 +4586,19 @@ test = ["websockets"]
 
 [[package]]
 name = "widgetsnbextension"
-version = "4.0.14"
-description = "Jupyter interactive widgets for Jupyter Notebook"
+version = "3.6.10"
+description = "IPython HTML widgets for Jupyter"
 optional = false
-python-versions = ">=3.7"
+python-versions = "*"
 files = [
-    {file = "widgetsnbextension-4.0.14-py3-none-any.whl", hash = "sha256:4875a9eaf72fbf5079dc372a51a9f268fc38d46f767cbf85c43a36da5cb9b575"},
-    {file = "widgetsnbextension-4.0.14.tar.gz", hash = "sha256:a3629b04e3edb893212df862038c7232f62973373869db5084aed739b437b5af"},
+    {file = "widgetsnbextension-3.6.10-py2.py3-none-any.whl", hash = "sha256:91a283c2bb50b43ae415dfe69fb026ece0c14e0102987fb53127c7a71e82417d"},
+    {file = "widgetsnbextension-3.6.10.tar.gz", hash = "sha256:cc370876baee1d23d4c506c798ab7d08c355133c9a5e81474159ff75877593df"},
 ]
+
+[package.dependencies]
+notebook = ">=4.4.1"
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3a58bdb02e2bab9c32e6e4f9cae92841b5bd8633f0692fa2b7611f18a28e79d1"
+content-hash = "38bc2871409ba77a6e6957412badfca327ce085c0197951a5b3f8eef9982806f"
