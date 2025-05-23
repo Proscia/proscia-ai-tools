@@ -13,7 +13,7 @@ from proscia_ai_tools.concentriq_embeddings_client.models import (
     SubmissionResponse,
 )
 
-BASE_URL = "https://concentriq-for-research.com"
+BASE_URL = "https://concentriq-ls.com"
 TOKEN = os.getenv("CONCENTRIQ_TOKEN", default="fake_token")
 
 
@@ -134,7 +134,7 @@ def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_
     assert result.images[1].image_id == 2
     assert result.images[0].status == "completed"
     assert result.images[1].status == "completed"
-    BASE_URL = "https://concentriq-for-research.com"
+    BASE_URL = "https://concentriq-ls.com"
     EMAIL = "test@example.com"
     PASSWORD = "password"  # pragma: allowlist secret # noqa: S105
     CACHE_DIR = "./data"

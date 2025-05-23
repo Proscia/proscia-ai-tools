@@ -42,7 +42,7 @@ class ConcentriqEmbeddingsClient:
 
         Example:
             client = ConcentriqEmbeddingsClient(
-                base_url="https://concentriq-for-research.com",
+                base_url="https://concentriq-ls.com",
                 token="your_token_here",
                 api_version="v1"
             )
