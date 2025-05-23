@@ -6,7 +6,7 @@ import pytest
 
 from proscia_ai_tools.concentriqlsclient import ConcentriqLSClient
 
-BASE_URL = "https://concentriq-for-research.com"
+BASE_URL = "https://concentriq-ls.com"
 EMAIL = "test@example.com"
 PASSWORD = "password"  # pragma: allowlist secret # noqa: S105
 

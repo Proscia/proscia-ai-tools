@@ -10,8 +10,8 @@ With Concentriq® Embeddings, Proscia is putting the power of foundation model e
 
 ## Transforming Pathology with Concentriq® Embeddings
 
-Proscia is proud to announce Concentriq® Embeddings, a seamless extension of our Concentriq® for Research platform. This tool is designed specifically for pharmaceutical companies, biotech companies, CROs, and academic research organizations to foster image-based research without the traditional barriers.
-Concentriq® Embeddings is a backend service that provides foundation model embeddings from any slide in Concentriq® for Research. The service extracts rich visual features at any magnification, promptly providing access to the visual information in the slide, at a greatly compressed memory footprint.
+Proscia is proud to announce Concentriq® Embeddings, a seamless extension of our Concentriq® LS platform. This tool is designed specifically for pharmaceutical companies, biotech companies, CROs, and academic research organizations to foster image-based research without the traditional barriers.
+Concentriq® Embeddings is a backend service that provides foundation model embeddings from any slide in Concentriq® LS. The service extracts rich visual features at any magnification, promptly providing access to the visual information in the slide, at a greatly compressed memory footprint.
 
 Through Concentriq® Embeddings, developers can access some of the most widely used foundation models, and Proscia plans to continue adding to the list of supported foundation models. Instead of wading through the ever-growing and dense literature attempting to crown a “best” foundation model for pathology, Concentriq® Embeddings allows researchers to easily try out many feature extractors on a downstream task, and future-proofs for the inevitably better foundation models of tomorrow.
 
@@ -70,7 +70,7 @@ _Before:_
 
 _Now with Concentriq® Embeddings:_
 
-Forget about OpenSlide, proprietary SDKs from scanner vendors, and OpenPhi. Concentriq® for Research and Concentriq® Embeddings are all you need for your AI development.
+Forget about OpenSlide, proprietary SDKs from scanner vendors, and OpenPhi. Concentriq® LS and Concentriq® Embeddings are all you need for your AI development.
 
 ---
 
