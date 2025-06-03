@@ -8,6 +8,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
+imageio = "^2.34"
 python = "^3.10"
 pydantic = "^2.7.0"
 requests = "^2.31.0"
@@ -37,7 +38,6 @@ pytest-cov = "^4.0.0"
 mypy = "^1.5.1"
 pre-commit = "^3.4.0"
 tox = "^4.11.1"
-imageio = "^2.34"
 requests = "^2.31"
 
 [tool.poetry.group.docs.dependencies]
