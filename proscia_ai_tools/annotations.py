@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Tuple
+from collections.abc import Iterable
 
 import cv2
 import numpy as np
@@ -11,8 +11,8 @@ from pydantic_xml import BaseXmlModel, attr, element
 class AnnotationBounds(pydantic.BaseModel):
     """Object to represent the bounds of an annotation and provide serialization methods"""
 
-    lower: List[float]
-    size: List[float]
+    lower: list[float]
+    size: list[float]
 
     def as_shapestring(self) -> str:
         return f"{self.lower[0]},{self.lower[1]} {self.size[0]},{self.size[1]}"
@@ -23,13 +23,13 @@ class AnnotationBounds(pydantic.BaseModel):
 class AnnotationShape(pydantic.BaseModel):
     """Object to hold a set of points used for representing annotations."""
 
-    data: List[List[float]]
+    data: list[list[float]]
     """Array of x,y points"""
 
     def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, i: int) -> List[float]:
+    def __getitem__(self, i: int) -> list[float]:
         return self.data[i]
 
     def as_shapestring(self) -> str:
@@ -49,7 +49,7 @@ class ConcentriqAnnotation(pydantic.BaseModel):
     isNegative: bool
     color: Color
     isSegmenting: bool
-    annotationClassId: Optional[int]
+    annotationClassId: int | None
     area: float
     """Area in micrometers. Defaults to zero if unspecified."""
 
@@ -83,7 +83,7 @@ class XMLVertex(BaseXmlModel):
 
 
 class XMLVertices(BaseXmlModel):
-    Vertex: List[XMLVertex] = element(tag="Vertex")
+    Vertex: list[XMLVertex] = element(tag="Vertex")
 
 
 class XMLRegion(BaseXmlModel):
@@ -115,7 +115,7 @@ class XMLRegion(BaseXmlModel):
 
 
 class XMLRegions(BaseXmlModel):
-    Region: List[XMLRegion] = element(tag="Region")
+    Region: list[XMLRegion] = element(tag="Region")
 
 
 class XMLAnnotation(BaseXmlModel):
@@ -144,10 +144,10 @@ class XMLAnnotation(BaseXmlModel):
 
 class Annotations(BaseXmlModel):
     MicronsPerPixel: str = attr(name="MicronsPerPixel")
-    Annotation: List[XMLAnnotation] = element(tag="Annotation")
+    Annotation: list[XMLAnnotation] = element(tag="Annotation")
 
 
-def pixel_to_viewport(point: Tuple[float, float], img_height: int, img_width: int) -> Tuple[float, float]:
+def pixel_to_viewport(point: tuple[float, float], img_height: int, img_width: int) -> tuple[float, float]:
     """Converts a pixel coordinate to a concentriq viewport.
 
     Parameters
@@ -172,7 +172,7 @@ def pixel_to_viewport(point: Tuple[float, float], img_height: int, img_width: in
     return (x, y)
 
 
-def viewport_to_pixel(point: Tuple[float, float], img_height: int, img_width: int) -> Tuple[float, float]:
+def viewport_to_pixel(point: tuple[float, float], img_height: int, img_width: int) -> tuple[float, float]:
     """Converts a concentriq viewport coordinate to a pixel coordinate.
 
     Parameters
@@ -199,7 +199,7 @@ def viewport_to_pixel(point: Tuple[float, float], img_height: int, img_width: in
 
 def _contour_to_annotation_points(
     contour: Iterable[Iterable[int]], img_width: int, img_height: int
-) -> Tuple[AnnotationShape, AnnotationBounds, float]:
+) -> tuple[AnnotationShape, AnnotationBounds, float]:
     """Returns pixel information for a free annotation created from a contour.
 
     .. note::
@@ -224,7 +224,7 @@ def _contour_to_annotation_points(
 
 
 def concentriq_annotation_to_xml(
-    annotations: List[ConcentriqAnnotation],
+    annotations: list[ConcentriqAnnotation],
 ) -> Annotations:
     xml_annotations = []
     for annot in annotations:
@@ -252,7 +252,7 @@ def concentriq_annotation_to_xml(
 class UnprocessableContour(Exception): ...
 
 
-def unique_unsorted(array: np.ndarray, axis: Optional[int] = None) -> np.ndarray:
+def unique_unsorted(array: np.ndarray, axis: int | None = None) -> np.ndarray:
     """Performs a unique on an array without changing the order - keeps first detection.
 
     Parameters
@@ -314,10 +314,10 @@ def create_contour_annotation(
     text: str,
     color: Color,
     is_negative=True,
-    img_width: Optional[int] = None,
-    img_height: Optional[int] = None,
-    resize_ratio: Optional[float] = None,
-    annotation_class_id: Optional[int] = None,
+    img_width: int | None = None,
+    img_height: int | None = None,
+    resize_ratio: float | None = None,
+    annotation_class_id: int | None = None,
 ) -> ConcentriqAnnotation:
     """Create a free annotation from a contour.
 

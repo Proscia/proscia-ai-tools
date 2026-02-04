@@ -1,5 +1,4 @@
 import time
-from typing import Dict
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -56,7 +55,7 @@ class ConcentriqEmbeddingsClient:
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
         self.session.headers.update({"token": self.token})
 
-    def submit_job(self, data: Dict, thumbnails: bool = False) -> SubmissionResponse:
+    def submit_job(self, data: dict, thumbnails: bool = False) -> SubmissionResponse:
         """Method to submit a job to the embeddings service.
         Optionally submit a job to get thumbnails.
 
@@ -84,7 +83,7 @@ class ConcentriqEmbeddingsClient:
             raise DetailedHTTPError(response) from e
         return SubmissionResponse(**response.json())
 
-    def roi_selection(self, data: Dict) -> SubmissionResponse:
+    def roi_selection(self, data: dict) -> SubmissionResponse:
         """Request embeddings for specific regions of interest of a slide
 
         Args:
@@ -122,7 +121,7 @@ class ConcentriqEmbeddingsClient:
             raise DetailedHTTPError(response) from e
         return SubmissionResponse(**response.json())
 
-    def estimate_job_cost(self, data: Dict) -> EstimationResponse:
+    def estimate_job_cost(self, data: dict) -> EstimationResponse:
         """Method to estimate a job cost.
 
         Args:
