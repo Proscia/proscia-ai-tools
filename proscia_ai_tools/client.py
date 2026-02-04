@@ -2,7 +2,6 @@ import json
 import os
 import time
 from functools import wraps
-from typing import Dict, List
 
 import imageio
 import numpy as np
@@ -67,7 +66,7 @@ class ClientWrapper:
         self.token = response.json().get("token", None)
 
     @catch_auth_exceptions
-    def _submit_job(self, data: Dict, thumbnails: bool = False) -> str:
+    def _submit_job(self, data: dict, thumbnails: bool = False) -> str:
         """
         Submits a job to the Concentriq Embeddings (or thumbnails) endpoint.
 
@@ -82,7 +81,7 @@ class ClientWrapper:
         submit_job_response = self.client.submit_job(data, thumbnails=thumbnails)
         return submit_job_response.ticket_id
 
-    def embed_images(self, ids: List[int], mpp: float = 1, model: str = "facebook/dinov2-base") -> str:
+    def embed_images(self, ids: list[int], mpp: float = 1, model: str = "facebook/dinov2-base") -> str:
         """
         Embeds a list of images.
 
@@ -99,7 +98,7 @@ class ClientWrapper:
         data = {"input_type": "image_ids", "input": ids, "mpp": mpp, "model": model}
         return self._submit_job(data)
 
-    def thumbnail_images(self, ids: List[int]) -> str:
+    def thumbnail_images(self, ids: list[int]) -> str:
         """
         Submits a job to produce thumbnails of a list of images.
 
@@ -114,7 +113,7 @@ class ClientWrapper:
         data = {"input_type": "image_ids", "input": ids}
         return self._submit_job(data, thumbnails=True)
 
-    def thumbnail_repos(self, ids: List[int]) -> str:
+    def thumbnail_repos(self, ids: list[int]) -> str:
         """
         Submits a job to produce thumbnails of a list of repository ids.
 
@@ -130,7 +129,7 @@ class ClientWrapper:
         return self._submit_job(data, thumbnails=True)
 
     @catch_auth_exceptions
-    def embed_roi(self, image_id: int, regions: List[Dict], mpp: float = 1, model: str = "facebook/dinov2-base") -> str:
+    def embed_roi(self, image_id: int, regions: list[dict], mpp: float = 1, model: str = "facebook/dinov2-base") -> str:
         """
         Request embeddings for specific regions of interest of a slide.
 
@@ -159,7 +158,7 @@ class ClientWrapper:
         data = {"image_id": image_id, "regions": regions, "mpp": mpp, "model": model}
         return self.client.roi_selection(data).ticket_id
 
-    def embed_repos(self, ids: List[int], mpp: float = 1, model: str = "facebook/dinov2-base") -> str:
+    def embed_repos(self, ids: list[int], mpp: float = 1, model: str = "facebook/dinov2-base") -> str:
         """
         Embeds a list of repositories.
 
@@ -177,7 +176,7 @@ class ClientWrapper:
         return self._submit_job(data)
 
     @catch_auth_exceptions
-    def job_status(self, ticket_id: str, thumbnails: bool = False) -> Dict:
+    def job_status(self, ticket_id: str, thumbnails: bool = False) -> dict:
         """
         Gets the status of a job submitted to the Concentriq Embeddings endpoint.
 
@@ -200,7 +199,7 @@ class ClientWrapper:
         download_embeddings: bool = True,
         load_embeddings: bool = True,
         page_limit: int = 1000,
-    ) -> Dict:
+    ) -> dict:
         """
         Fetches the results of a job from the cache or the Proscia endpoint.
         Optionally loads the embeddings.

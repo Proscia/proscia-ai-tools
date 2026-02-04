@@ -1,5 +1,5 @@
 import io
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import cv2
 import imageio
@@ -9,7 +9,7 @@ from PIL import Image
 
 
 class ShapeMismatchException(Exception):
-    def __init__(self, thumbnail_shape: Tuple, mask_shape: Tuple) -> None:
+    def __init__(self, thumbnail_shape: tuple, mask_shape: tuple) -> None:
         super().__init__(f"Thumbnail shape {thumbnail_shape} != mask shape {mask_shape}.")
 
 
@@ -63,7 +63,7 @@ def image_as_bytes(overlay: np.ndarray) -> bytes:
 
 
 def overlay_mask(
-    thumbnail: np.ndarray, mask: np.ndarray, rgb_color: Tuple[int, int, int] = (0, 240, 0), alpha: float = 0.4
+    thumbnail: np.ndarray, mask: np.ndarray, rgb_color: tuple[int, int, int] = (0, 240, 0), alpha: float = 0.4
 ) -> np.ndarray:
     """Overlays a boolean mask onto a thumbnail.
 
@@ -102,7 +102,7 @@ def overlay_mask(
     return overlay
 
 
-def parse(emb_dict: Dict[str, torch.Tensor]) -> Tuple[List[str], Dict[str, List[int]]]:
+def parse(emb_dict: dict[str, torch.Tensor]) -> tuple[list[str], dict[str, list[int]]]:
     """
     Parse the embeddings dictionary into sorted keys and a dictionary of coordinates.
 
@@ -119,7 +119,7 @@ def parse(emb_dict: Dict[str, torch.Tensor]) -> Tuple[List[str], Dict[str, List[
     return sorted_keys, coordinates
 
 
-def stack_embedding(embedding: Dict[str, Any], skeys: List[str]) -> np.ndarray:
+def stack_embedding(embedding: dict[str, Any], skeys: list[str]) -> np.ndarray:
     """
     Stack the embeddings into a matrix.
 
@@ -136,7 +136,7 @@ def stack_embedding(embedding: Dict[str, Any], skeys: List[str]) -> np.ndarray:
     return vector_mat
 
 
-def tile_thumbnail(emb: dict, indices=None) -> Dict[str, np.ndarray]:
+def tile_thumbnail(emb: dict, indices=None) -> dict[str, np.ndarray]:
     """
     Tile the thumbnail image into tiles.
 

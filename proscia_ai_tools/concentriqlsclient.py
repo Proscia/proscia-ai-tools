@@ -3,7 +3,6 @@ import json
 import logging
 import time
 from functools import wraps
-from typing import Dict, List, Optional
 
 import numpy as np
 import requests
@@ -97,7 +96,7 @@ class ConcentriqLSClient:
         self.session.headers.update({"Authorization": f"Bearer {self.token}"})
 
     @catch_auth_exceptions
-    def create_overlay(self, image_id: int, overlay_name: str, module_name: str = "proscia-ai-tools") -> Dict:
+    def create_overlay(self, image_id: int, overlay_name: str, module_name: str = "proscia-ai-tools") -> dict:
         """Issue a HTTP POST request to create an overlay object for an image resource
         Parameters:
         -----------
@@ -124,7 +123,7 @@ class ConcentriqLSClient:
         overlay_post_response = overlay_post_response.json()
         return overlay_post_response["data"]
 
-    def list_modules(self, filters: Optional[dict] = None) -> List[Dict]:
+    def list_modules(self, filters: dict | None = None) -> list[dict]:
         """Method to list available modules in the platform
 
         Returns:
@@ -159,7 +158,7 @@ class ConcentriqLSClient:
                 return True
         return False
 
-    def create_module(self, module_name: str) -> Dict:
+    def create_module(self, module_name: str) -> dict:
         """Method that creates a module on the platform
 
         Args:
@@ -259,7 +258,7 @@ class ConcentriqLSClient:
             return image_data_get_response_dict["data"]
 
     @catch_auth_exceptions
-    def get_repo_data(self, target_repo_id: str) -> Dict:
+    def get_repo_data(self, target_repo_id: str) -> dict:
         """Get metadata for requested repo in Concentriq
         Parameters:
         ----------
@@ -295,7 +294,7 @@ class ConcentriqLSClient:
             return repo_data_get_response_dict["data"]
 
     @catch_auth_exceptions
-    def paginated_get_query(self, url: str, params: dict) -> Dict:
+    def paginated_get_query(self, url: str, params: dict) -> dict:
         """Method to perform series of queries with incremental page numbers to
         retreive all entities with default GET retrivel limited with pagination
 
@@ -429,7 +428,7 @@ class ConcentriqLSClient:
         return images_response_dict["data"]
 
     def get_annotations(
-        self, image_ids: List[int], annotationId: Optional[List[int]] = None, text: Optional[List[str]] = None
+        self, image_ids: list[int], annotationId: list[int] | None = None, text: list[str] | None = None
     ):
         """Get annotations from Concentriq
 
@@ -478,7 +477,7 @@ class ConcentriqLSClient:
         self.logger.error("%s", clean_error_message)
 
     @catch_auth_exceptions
-    def create_annotation(self, annotation: ConcentriqAnnotation) -> Dict:
+    def create_annotation(self, annotation: ConcentriqAnnotation) -> dict:
         """Creates an annotation.
 
         Parameters
@@ -519,7 +518,7 @@ class ConcentriqLSClient:
     @catch_auth_exceptions
     def create_annotation_class(
         self, annotation_class_name: str, description: str = "", color: str = "#000000"
-    ) -> Dict:
+    ) -> dict:
         """Creates an annotation class.
 
         Parameters
@@ -607,8 +606,8 @@ class ConcentriqLSClient:
         annotation_name: str = "",
         color: str = "#0000FF",
         is_negative: bool = False,
-        annotation_class_id: Optional[int] = None,
-    ) -> Dict:
+        annotation_class_id: int | None = None,
+    ) -> dict:
         """Converts a mask image into annotations and inserts them into the Concentriq LS platform.
 
         Parameters
