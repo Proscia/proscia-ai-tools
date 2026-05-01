@@ -1,3 +1,4 @@
+import base64
 import time
 
 import requests
@@ -11,6 +12,8 @@ from proscia_ai_tools.concentriq_embeddings_client.models import (
     SubmissionResponse,
     ThumbnailsJobOutput,
 )
+
+API_KEY_HEADER_NAME = "concentriq-api-key"  # pragma: allowlist secret
 
 
 class DetailedHTTPError(requests.exceptions.HTTPError):
@@ -30,30 +33,52 @@ class DetailedHTTPError(requests.exceptions.HTTPError):
 
 
 class ConcentriqEmbeddingsClient:
-    def __init__(self, base_url: str, token: str, api_version: str = "v1"):
+    def __init__(
+        self,
+        base_url: str,
+        token: str | None = None,
+        api_version: str = "v1",
+        *,
+        email: str | None = None,
+        password: str | None = None,
+        api_key: str | None = None,
+    ):
         """Client for the Concentriq Embeddings service.
 
-        Args:
-            base_url (str): The base URL of the embeddings service
-            token (str): The API token. Your token can be obtained via basic auth
-                using the `<base_url>/api/v3/auth/token endpoint.
-            api_version (str): The embeddings API version
+        Provide exactly one of the following auth methods:
+          - ``token``: A JWT bearer token (from ``/api/v3/auth/token``).
+          - ``email`` + ``password``: Basic auth credentials.
+          - ``api_key``: A Concentriq API key.
 
-        Example:
-            client = ConcentriqEmbeddingsClient(
-                base_url="https://concentriq-ls.com",
-                token="your_token_here",
-                api_version="v1"
-            )
+        Args:
+            base_url: The base URL of the embeddings service.
+            token: JWT bearer token.
+            api_version: The embeddings API version.
+            email: Email for basic auth.
+            password: Password for basic auth.
+            api_key: Concentriq API key.
         """
         self.base_url = base_url
-        self.token = token
         self.api_version = api_version
         self.session = requests.Session()
         retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
-        self.session.headers.update({"token": self.token})
+
+        has_basic = email is not None and password is not None
+        has_token = token is not None
+        has_api_key = api_key is not None
+        provided = sum([has_basic, has_token, has_api_key])
+        if provided != 1:
+            raise ValueError("Provide exactly one auth method: token, email+password, or api_key.")  # noqa: TRY003
+
+        if has_token:
+            self.session.headers.update({"Authorization": f"Bearer {token}"})
+        elif has_basic:
+            encoded = base64.b64encode(f"{email}:{password}".encode()).decode()
+            self.session.headers.update({"Authorization": f"Basic {encoded}"})
+        elif has_api_key:
+            self.session.headers.update({API_KEY_HEADER_NAME: api_key})
 
     def submit_job(self, data: dict, thumbnails: bool = False) -> SubmissionResponse:
         """Method to submit a job to the embeddings service.

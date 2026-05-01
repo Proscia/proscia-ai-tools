@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from proscia_ai_tools.concentriqlsclient import ConcentriqLSClient
+from proscia_ai_tools.concentriqlsclient import API_KEY_HEADER_NAME, ConcentriqLSClient
 
 BASE_URL = "https://concentriq-ls.com"
 EMAIL = "test@example.com"
@@ -146,3 +146,36 @@ def test_get_annotations(mock_get, ls_client):
     annotations = ls_client.get_annotations(image_ids=[1])
     assert annotations["annotations"][0]["id"] == 1
     assert annotations["annotations"][0]["name"] == "annotation"
+
+
+# --- ConcentriqLSClient auth tests ---
+
+
+class TestLSClientAuth:
+    @patch("requests.request")
+    def test_basic_auth(self, mock_request):
+        mock_request.return_value = mock_response(json_data='{"token": "jwt-from-exchange"}')
+        client = ConcentriqLSClient(url=BASE_URL, email=EMAIL, password=PASSWORD)
+        assert client._auth_method == "basic"
+        assert client.token == "jwt-from-exchange"  # noqa: S105
+        assert client.session.headers["Authorization"] == "Bearer jwt-from-exchange"
+
+    def test_token_auth(self):
+        client = ConcentriqLSClient(url=BASE_URL, token="pre-obtained-jwt")  # noqa: S106
+        assert client._auth_method == "jwt"
+        assert client.token == "pre-obtained-jwt"  # noqa: S105
+        assert client.session.headers["Authorization"] == "Bearer pre-obtained-jwt"
+
+    def test_api_key_auth(self):
+        client = ConcentriqLSClient(url=BASE_URL, api_key="my-api-key")  # pragma: allowlist secret
+        assert client._auth_method == "api_key"
+        assert client.session.headers[API_KEY_HEADER_NAME] == "my-api-key"  # pragma: allowlist secret
+        assert "Authorization" not in client.session.headers
+
+    def test_no_auth_raises(self):
+        with pytest.raises(ValueError, match="Provide exactly one auth method"):
+            ConcentriqLSClient(url=BASE_URL)
+
+    def test_multiple_auth_raises(self):
+        with pytest.raises(ValueError, match="Provide exactly one auth method"):
+            ConcentriqLSClient(url=BASE_URL, email=EMAIL, password=PASSWORD, api_key="key")  # pragma: allowlist secret

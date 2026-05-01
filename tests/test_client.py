@@ -1,3 +1,4 @@
+import base64
 import os
 from unittest.mock import patch
 
@@ -5,7 +6,7 @@ import pytest
 from requests.models import Response
 
 from proscia_ai_tools.client import ClientWrapper
-from proscia_ai_tools.concentriq_embeddings_client.client import ConcentriqEmbeddingsClient
+from proscia_ai_tools.concentriq_embeddings_client.client import API_KEY_HEADER_NAME, ConcentriqEmbeddingsClient
 from proscia_ai_tools.concentriq_embeddings_client.models import (
     EstimationResponse,
     JobOutput,
@@ -250,3 +251,63 @@ def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_
         thumbnails = client_wrapper.get_thumbnails("1234")
         assert len(thumbnails["thumbnails"]) == 1
         assert thumbnails["thumbnails"][0]["image_id"] == 1
+
+
+# --- ConcentriqEmbeddingsClient auth tests ---
+
+
+class TestEmbeddingsClientAuth:
+    def test_token_auth_sets_bearer_header(self):
+        client = ConcentriqEmbeddingsClient(base_url=BASE_URL, token="my-jwt")  # noqa: S106
+        assert client.session.headers["Authorization"] == "Bearer my-jwt"
+        assert API_KEY_HEADER_NAME not in client.session.headers
+
+    def test_basic_auth_sets_authorization_header(self):
+        client = ConcentriqEmbeddingsClient(base_url=BASE_URL, email="user@example.com", password="secret")  # noqa: S106
+        expected = "Basic " + base64.b64encode(b"user@example.com:secret").decode()
+        assert client.session.headers["Authorization"] == expected
+
+    def test_api_key_auth_sets_api_key_header(self):
+        client = ConcentriqEmbeddingsClient(base_url=BASE_URL, api_key="my-api-key")  # pragma: allowlist secret
+        assert client.session.headers[API_KEY_HEADER_NAME] == "my-api-key"  # pragma: allowlist secret
+        assert "Authorization" not in client.session.headers
+
+    def test_no_auth_raises(self):
+        with pytest.raises(ValueError, match="Provide exactly one auth method"):
+            ConcentriqEmbeddingsClient(base_url=BASE_URL)
+
+    def test_multiple_auth_raises(self):
+        with pytest.raises(ValueError, match="Provide exactly one auth method"):
+            ConcentriqEmbeddingsClient(base_url=BASE_URL, token="tok", api_key="key")  # noqa: S106  # pragma: allowlist secret
+
+
+# --- ClientWrapper auth tests ---
+
+
+class TestClientWrapperAuth:
+    @patch("requests.request")
+    def test_basic_auth(self, mock_request):
+        mock_request.return_value.json.return_value = {"token": "jwt-from-exchange"}
+        wrapper = ClientWrapper(url=BASE_URL, email="user@example.com", password="secret")  # noqa: S106
+        assert wrapper._auth_method == "basic"
+        assert wrapper.token == "jwt-from-exchange"  # noqa: S105
+        assert wrapper.client.session.headers["Authorization"] == "Bearer jwt-from-exchange"
+
+    def test_token_auth(self):
+        wrapper = ClientWrapper(url=BASE_URL, token="pre-obtained-jwt")  # noqa: S106
+        assert wrapper._auth_method == "jwt"
+        assert wrapper.token == "pre-obtained-jwt"  # noqa: S105
+        assert wrapper.client.session.headers["Authorization"] == "Bearer pre-obtained-jwt"
+
+    def test_api_key_auth(self):
+        wrapper = ClientWrapper(url=BASE_URL, api_key="my-api-key")  # pragma: allowlist secret
+        assert wrapper._auth_method == "api_key"
+        assert wrapper.client.session.headers[API_KEY_HEADER_NAME] == "my-api-key"  # pragma: allowlist secret
+
+    def test_no_auth_raises(self):
+        with pytest.raises(ValueError, match="Provide exactly one auth method"):
+            ClientWrapper(url=BASE_URL)
+
+    def test_multiple_auth_raises(self):
+        with pytest.raises(ValueError, match="Provide exactly one auth method"):
+            ClientWrapper(url=BASE_URL, email="u@e.com", password="p", api_key="key")  # noqa: S106  # pragma: allowlist secret

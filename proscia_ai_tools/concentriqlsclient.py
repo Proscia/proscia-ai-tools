@@ -14,6 +14,8 @@ from urllib3.util.retry import Retry
 from proscia_ai_tools import utils
 from proscia_ai_tools.annotations import ConcentriqAnnotation, create_contour_annotation, mask2contours
 
+API_KEY_HEADER_NAME = "concentriq-api-key"  # pragma: allowlist secret
+
 
 class GetException(Exception):
     """Exception raised when get request fails."""
@@ -26,8 +28,22 @@ class GetException(Exception):
 class ConcentriqLSClient:
     DEFAULT_PAGINATION_ITEM_COUNT = 500
 
-    def __init__(self, url: str, email: str, password: str, pagination_info=None):
+    def __init__(
+        self,
+        url: str,
+        email: str | None = None,
+        password: str | None = None,
+        pagination_info=None,
+        *,
+        token: str | None = None,
+        api_key: str | None = None,
+    ):
         """Client for the Concentriq LS api.
+
+        Provide exactly one of the following auth methods:
+          - ``email`` + ``password``: Basic auth credentials (exchanged for a JWT).
+          - ``token``: A pre-obtained JWT bearer token.
+          - ``api_key``: A Concentriq API key.
 
         Parameters:
         -----------
@@ -50,6 +66,8 @@ class ConcentriqLSClient:
                 Note: When paginated queries are involved user has to be aware of
                 affect of sorting configuration default is robust to an extent to
                 prevent any duplicates
+        token: "str" pre-obtained JWT bearer token
+        api_key: "str" Concentriq API key  # pragma: allowlist secret
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         if pagination_info is None:
@@ -57,12 +75,28 @@ class ConcentriqLSClient:
         self.endpoint = f"{url}/api"
         self.username = email
         self.password = password
+        self._token = token
+        self._api_key = api_key
+
+        has_basic = email is not None and password is not None
+        has_token = token is not None
+        has_api_key = api_key is not None
+        provided = sum([has_basic, has_token, has_api_key])
+        if provided != 1:
+            raise ValueError("Provide exactly one auth method: email+password, token, or api_key.")  # noqa: TRY003
+
+        if has_basic:
+            self._auth_method = "basic"
+        elif has_token:
+            self._auth_method = "jwt"
+        else:
+            self._auth_method = "api_key"
 
         retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
         self.session = requests.Session()
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
-        self.refresh_client_token()
+        self._apply_auth()
 
         pagination_info["page"] = 1
         pagination_info["descending"] = pagination_info.get("descending", False)
@@ -78,8 +112,10 @@ class ConcentriqLSClient:
             try:
                 return func(self, *args, **kwargs)
             except HTTPError:
-                self.refresh_client_token()
-                return func(self, *args, **kwargs)
+                if self._auth_method == "basic":
+                    self.refresh_client_token()
+                    return func(self, *args, **kwargs)
+                raise
 
         return wrapper
 
@@ -91,9 +127,19 @@ class ConcentriqLSClient:
         )
         self.token = response.json().get("token", None)
 
+    def _apply_auth(self):
+        if self._auth_method == "basic":
+            self._get_token()
+            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+        elif self._auth_method == "jwt":
+            self.token = self._token
+            self.session.headers.update({"Authorization": f"Bearer {self._token}"})
+        else:
+            self.token = None
+            self.session.headers.update({API_KEY_HEADER_NAME: self._api_key})
+
     def refresh_client_token(self):
-        self._get_token()
-        self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+        self._apply_auth()
 
     @catch_auth_exceptions
     def create_overlay(self, image_id: int, overlay_name: str, module_name: str = "proscia-ai-tools") -> dict:
