@@ -25,22 +25,67 @@ class ClientWrapper:
     """
     A wrapper around the Concentriq Embeddings client.
 
+    Provide exactly one of the following auth methods:
+      - ``email`` + ``password``: Basic auth credentials (exchanged for a JWT).
+      - ``token``: A pre-obtained JWT bearer token.
+      - ``api_key``: A Concentriq API key.
+
     Parameters
     ----------
-    url (str): The URL of the Concentriq Embeddings endpoint.
-    email (str): The email address to use for authentication.
-    password (str): The password to use for authentication.
-    cache_dir (str, optional): The directory to use for caching results. Defaults to `./data`.
+    url : str
+        The URL of the Concentriq Embeddings endpoint.
+    email : str, optional
+        The email address to use for basic authentication.
+    password : str, optional
+        The password to use for basic authentication.
+    cache_dir : str, optional
+        The directory to use for caching results. Defaults to ``./data``.
+    device : int, optional
+        The PyTorch device index. Defaults to 0.
+    api_version : str, optional
+        The embeddings API version. Defaults to ``v1``.
+    token : str, optional
+        A pre-obtained JWT bearer token.
+    api_key : str, optional
+        A Concentriq API key.
     """
 
-    def __init__(self, url: str, email: str, password: str, cache_dir="./data", device: int = 0, api_version="v1"):
+    def __init__(
+        self,
+        url: str,
+        email: str | None = None,
+        password: str | None = None,
+        cache_dir="./data",
+        device: int = 0,
+        api_version="v1",
+        *,
+        token: str | None = None,
+        api_key: str | None = None,
+    ):
         self.cache_dir = cache_dir
         self.device = device
         self.base_url = url
         self.email = email
         self.password = password
         self.api_version = api_version
-        self.refresh_client_token()
+        self._token = token
+        self._api_key = api_key
+
+        has_basic = email is not None and password is not None
+        has_token = token is not None
+        has_api_key = api_key is not None
+        provided = sum([has_basic, has_token, has_api_key])
+        if provided != 1:
+            raise ValueError("Provide exactly one auth method: email+password, token, or api_key.")  # noqa: TRY003
+
+        if has_basic:
+            self._auth_method = "basic"
+        elif has_token:
+            self._auth_method = "jwt"
+        else:
+            self._auth_method = "api_key"
+
+        self._init_client()
 
     def catch_auth_exceptions(func):
         @wraps(func)
@@ -48,14 +93,32 @@ class ClientWrapper:
             try:
                 return func(self, *args, **kwargs)
             except HTTPError:
-                self.refresh_client_token()
-                return func(self, *args, **kwargs)
+                if self._auth_method == "basic":
+                    self._init_client()
+                    return func(self, *args, **kwargs)
+                raise
 
         return wrapper
 
+    def _init_client(self):
+        if self._auth_method == "basic":
+            self._get_token()
+            self.client = ConcentriqEmbeddingsClient(
+                base_url=self.base_url, token=self.token, api_version=self.api_version
+            )
+        elif self._auth_method == "jwt":
+            self.token = self._token
+            self.client = ConcentriqEmbeddingsClient(
+                base_url=self.base_url, token=self._token, api_version=self.api_version
+            )
+        else:
+            self.token = None
+            self.client = ConcentriqEmbeddingsClient(
+                base_url=self.base_url, api_key=self._api_key, api_version=self.api_version
+            )
+
     def refresh_client_token(self):
-        self._get_token()
-        self.client = ConcentriqEmbeddingsClient(base_url=self.base_url, token=self.token, api_version=self.api_version)
+        self._init_client()
 
     def _get_token(self) -> None:
         url = f"{self.base_url}/api/v3/auth/token"
