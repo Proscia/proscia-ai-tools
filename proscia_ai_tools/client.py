@@ -256,6 +256,18 @@ class ClientWrapper:
         return status_response
 
     @catch_auth_exceptions
+    def list_models(self) -> dict:
+        """
+        Lists the foundation models available for creating embeddings in this deployment.
+
+        Returns
+        -------
+        Dict: The list of available models.
+        """
+        models_response = self.client.list_models()
+        return models_response
+
+    @catch_auth_exceptions
     def load_results(
         self,
         ticket_id: str,
@@ -437,10 +449,18 @@ class ClientWrapper:
             elif status.status == "failed":
                 print(status)
                 return None
-            else:
+            elif status.status == "expired":
+                print(f"Job {ticket_id} expired before completion.")
+                print(status)
+                return None
+            elif status.status in ["queued", "processing"]:
                 print(f"Waiting for job {ticket_id} to complete...")
                 print(status)
                 time.sleep(polling_interval_seconds)
+            else:
+                print(f"Job {ticket_id} returned unrecognized status '{status.status}'; stopping poll.")
+                print(status)
+                return None
 
     @catch_auth_exceptions
     def load_thumbnail_results(
@@ -545,7 +565,15 @@ class ClientWrapper:
             elif status.status == "failed":
                 print(status)
                 return None
-            else:
+            elif status.status == "expired":
+                print(f"Job {ticket_id} expired before completion.")
+                print(status)
+                return None
+            elif status.status in ["queued", "processing"]:
                 print(f"Waiting for job {ticket_id} to complete...")
                 print(status)
                 time.sleep(polling_interval_seconds)
+            else:
+                print(f"Job {ticket_id} returned unrecognized status '{status.status}'; stopping poll.")
+                print(status)
+                return None

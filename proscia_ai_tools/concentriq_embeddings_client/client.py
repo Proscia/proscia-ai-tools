@@ -8,6 +8,7 @@ from urllib3.util.retry import Retry
 from proscia_ai_tools.concentriq_embeddings_client.models import (
     EstimationResponse,
     JobOutput,
+    ModelsListResponse,
     StatusResponse,
     SubmissionResponse,
     ThumbnailsJobOutput,
@@ -171,6 +172,20 @@ class ConcentriqEmbeddingsClient:
             raise DetailedHTTPError(response) from e
         return EstimationResponse(**response.json())
 
+    def list_models(self) -> ModelsListResponse:
+        """Method to list the foundation models available for creating embeddings in this deployment.
+
+        Returns:
+            ModelsListResponse: The response object
+        """
+        url = f"{self.base_url}/embeddings/{self.api_version}/models/"
+        try:
+            response = self.session.get(url)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise DetailedHTTPError(response) from e
+        return ModelsListResponse(**response.json())
+
     def get_job_status(self, ticket: str, thumbnails: bool = False) -> StatusResponse:
         """Method to get the status of a job.
 
@@ -182,7 +197,7 @@ class ConcentriqEmbeddingsClient:
             StatusResponse: The response object
         """
         maybe_thumbnails = "/thumbnails" if thumbnails else ""
-        url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/status/{ticket}"
+        url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/status/{ticket}/"
         try:
             response = self.session.get(url)
             response.raise_for_status()
@@ -203,7 +218,7 @@ class ConcentriqEmbeddingsClient:
 
         """
         maybe_thumbnails = "/thumbnails" if thumbnails else ""
-        url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/results/{ticket}?offset={offset}&limit={limit}"
+        url = f"{self.base_url}/embeddings/{self.api_version}{maybe_thumbnails}/results/{ticket}/?offset={offset}&limit={limit}"
         try:
             response = self.session.get(url)
             response.raise_for_status()
