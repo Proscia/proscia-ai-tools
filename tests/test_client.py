@@ -10,6 +10,7 @@ from proscia_ai_tools.concentriq_embeddings_client.client import API_KEY_HEADER_
 from proscia_ai_tools.concentriq_embeddings_client.models import (
     EstimationResponse,
     JobOutput,
+    ModelsListResponse,
     StatusResponse,
     SubmissionResponse,
 )
@@ -77,6 +78,37 @@ def test_estimate_job_cost(mock_post, client):
     assert response.credits_before_job == 100.0
 
 
+@patch("requests.Session.post")
+def test_estimate_job_cost_with_invalid_images(mock_post, client):
+    mock_post.return_value = mock_response(
+        json_data=(
+            '{"job_cost": 10.0, "credits_before_job": 100.0, "credits_after_job": 90.0, '
+            '"invalid_images": [{"id": 5, "error": "corrupt", "reason": "unreadable"}]}'
+        )
+    )
+
+    data = {"input_type": "image_ids", "input": [1, 2, 3], "model": "facebook/dinov2-base", "mpp": 1.0}
+
+    response = client.estimate_job_cost(data)
+    assert isinstance(response, EstimationResponse)
+    assert response.invalid_images[0].id == 5
+    assert response.invalid_images[0].error == "corrupt"
+    assert response.invalid_images[0].reason == "unreadable"
+    assert not hasattr(response, "num_invalid_images")
+
+
+@patch("requests.Session.post")
+def test_estimate_job_cost_no_invalid_images(mock_post, client):
+    mock_post.return_value = mock_response(
+        json_data='{"job_cost": 10.0, "credits_before_job": 100.0, "credits_after_job": 90.0}'
+    )
+
+    data = {"input_type": "image_ids", "input": [1, 2, 3], "model": "facebook/dinov2-base", "mpp": 1.0}
+
+    response = client.estimate_job_cost(data)
+    assert response.invalid_images is None
+
+
 @patch("requests.Session.get")
 def test_get_job_status(mock_get, client):
     # Provide the correct mock data structure expected by StatusResponse
@@ -96,6 +128,22 @@ def test_get_job_status(mock_get, client):
 
 
 @patch("requests.Session.get")
+def test_get_job_status_url_has_trailing_slash(mock_get, client):
+    mock_get.return_value = mock_response(json_data='{"status": "completed"}')
+
+    client.get_job_status("1234")
+    assert mock_get.call_args[0][0] == f"{BASE_URL}/embeddings/v1/status/1234/"
+
+
+@patch("requests.Session.get")
+def test_get_job_status_thumbnails_url_has_trailing_slash(mock_get, client):
+    mock_get.return_value = mock_response(json_data='{"status": "completed"}')
+
+    client.get_job_status("1234", thumbnails=True)
+    assert mock_get.call_args[0][0] == f"{BASE_URL}/embeddings/v1/thumbnails/status/1234/"
+
+
+@patch("requests.Session.get")
 def test_fetch_results(mock_get, client):
     mock_get.return_value = mock_response(json_data='{"images": [{"image_id": 1, "status": "completed"}]}')
 
@@ -105,6 +153,38 @@ def test_fetch_results(mock_get, client):
     assert len(response.images) == 1
     assert response.images[0].image_id == 1
     assert response.images[0].status == "completed"
+
+
+@patch("requests.Session.get")
+def test_fetch_results_url_has_trailing_slash(mock_get, client):
+    mock_get.return_value = mock_response(json_data='{"images": []}')
+
+    client.fetch_results("1234", offset=0, limit=100)
+    assert mock_get.call_args[0][0] == f"{BASE_URL}/embeddings/v1/results/1234/?offset=0&limit=100"
+
+
+@patch("requests.Session.get")
+def test_fetch_results_thumbnails_url_has_trailing_slash(mock_get, client):
+    mock_get.return_value = mock_response(json_data='{"thumbnails": []}')
+
+    client.fetch_results("1234", offset=0, limit=100, thumbnails=True)
+    assert mock_get.call_args[0][0] == f"{BASE_URL}/embeddings/v1/thumbnails/results/1234/?offset=0&limit=100"
+
+
+@patch("requests.Session.get")
+def test_list_models(mock_get, client):
+    mock_get.return_value = mock_response(
+        json_data=(
+            '{"models": [{"model": "facebook/dinov2-base", "display_name": "DinoV2", '
+            '"patch_size": 224, "embedding_dimension": 768, "license": "Apache-2.0"}]}'
+        )
+    )
+
+    response = client.list_models()
+    assert isinstance(response, ModelsListResponse)
+    assert response.models[0].model == "facebook/dinov2-base"
+    assert response.models[0].embedding_dimension == 768
+    assert mock_get.call_args[0][0] == f"{BASE_URL}/embeddings/v1/models/"
 
 
 @patch.object(ConcentriqEmbeddingsClient, "get_job_status")
@@ -251,6 +331,78 @@ def test_poll_for_completion_and_fetch_results(mock_fetch_results, mock_get_job_
         thumbnails = client_wrapper.get_thumbnails("1234")
         assert len(thumbnails["thumbnails"]) == 1
         assert thumbnails["thumbnails"][0]["image_id"] == 1
+
+
+@pytest.fixture
+def client_wrapper():
+    return ClientWrapper(url=BASE_URL, token="fake-jwt", cache_dir="./data")  # noqa: S106
+
+
+@patch("requests.Session.get")
+def test_list_models_client_wrapper(mock_get, client_wrapper):
+    mock_get.return_value = mock_response(
+        json_data=(
+            '{"models": [{"model": "facebook/dinov2-base", "display_name": "DinoV2", '
+            '"patch_size": 224, "embedding_dimension": 768}]}'
+        )
+    )
+
+    models_response = client_wrapper.list_models()
+    assert models_response.models[0].model == "facebook/dinov2-base"
+
+
+@patch("proscia_ai_tools.client.time.sleep")
+@patch("requests.Session.get")
+def test_get_embeddings_failed_status_returns_none(mock_get, mock_sleep, client_wrapper):
+    mock_get.return_value = mock_response(json_data='{"status": "failed"}')
+    result = client_wrapper.get_embeddings("failed-ticket")
+    assert result is None
+    mock_sleep.assert_not_called()
+
+
+@patch("proscia_ai_tools.client.time.sleep")
+@patch("requests.Session.get")
+def test_get_embeddings_expired_status_returns_none(mock_get, mock_sleep, client_wrapper):
+    mock_get.return_value = mock_response(json_data='{"status": "expired"}')
+    result = client_wrapper.get_embeddings("expired-ticket")
+    assert result is None
+    mock_sleep.assert_not_called()
+
+
+@patch("proscia_ai_tools.client.time.sleep")
+@patch("requests.Session.get")
+def test_get_embeddings_unknown_status_returns_none(mock_get, mock_sleep, client_wrapper):
+    mock_get.return_value = mock_response(json_data='{"status": "some_future_status"}')
+    result = client_wrapper.get_embeddings("unknown-ticket")
+    assert result is None
+    mock_sleep.assert_not_called()
+
+
+@patch("proscia_ai_tools.client.time.sleep")
+@patch("requests.Session.get")
+def test_get_thumbnails_failed_status_returns_none(mock_get, mock_sleep, client_wrapper):
+    mock_get.return_value = mock_response(json_data='{"status": "failed"}')
+    result = client_wrapper.get_thumbnails("failed-thumb-ticket")
+    assert result is None
+    mock_sleep.assert_not_called()
+
+
+@patch("proscia_ai_tools.client.time.sleep")
+@patch("requests.Session.get")
+def test_get_thumbnails_expired_status_returns_none(mock_get, mock_sleep, client_wrapper):
+    mock_get.return_value = mock_response(json_data='{"status": "expired"}')
+    result = client_wrapper.get_thumbnails("expired-thumb-ticket")
+    assert result is None
+    mock_sleep.assert_not_called()
+
+
+@patch("proscia_ai_tools.client.time.sleep")
+@patch("requests.Session.get")
+def test_get_thumbnails_unknown_status_returns_none(mock_get, mock_sleep, client_wrapper):
+    mock_get.return_value = mock_response(json_data='{"status": "some_future_status"}')
+    result = client_wrapper.get_thumbnails("unknown-thumb-ticket")
+    assert result is None
+    mock_sleep.assert_not_called()
 
 
 # --- ConcentriqEmbeddingsClient auth tests ---

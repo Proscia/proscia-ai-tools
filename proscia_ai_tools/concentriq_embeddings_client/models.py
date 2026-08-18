@@ -1,12 +1,17 @@
 from pydantic import BaseModel, Field
 
 
+class InvalidImage(BaseModel):
+    id: int = Field(..., title="Id")  # noqa: A003
+    error: str = Field(..., title="Error")
+    reason: str | None = Field(None, title="Reason")
+
+
 class EstimationResponse(BaseModel):
     job_cost: float = Field(..., title="Job Cost")
     credits_before_job: float = Field(..., title="Credits Before Job")
     credits_after_job: float = Field(..., title="Credits After Job")
-    num_invalid_images: int | None = Field(None, title="Num Invalid Images")
-    invalid_image_ids: list[int] | None = Field(None, title="Invalid Image Ids")
+    invalid_images: list[InvalidImage] | None = Field(None, title="Invalid Images")
 
 
 class SubmissionResponse(BaseModel):
@@ -53,3 +58,19 @@ class JobOutput(BaseModel):
 
 class ThumbnailsJobOutput(BaseModel):
     thumbnails: list[ThumbnailImageOutput] | None = Field(None, title="Thumbnail Images")
+
+
+class ModelInfo(BaseModel):
+    model: str = Field(..., title="Model")
+    display_name: str = Field(..., title="Display Name")
+    patch_size: int = Field(..., title="Patch Size")
+    embedding_dimension: int = Field(..., title="Embedding Dimension")
+    license: str | None = Field(None, title="License")  # noqa: A003
+    license_url: str | None = Field(None, title="License Url")
+    huggingface_url: str | None = Field(None, title="Huggingface Url")
+    paper_url: str | None = Field(None, title="Paper Url")
+    notes: str | None = Field(None, title="Notes")
+
+
+class ModelsListResponse(BaseModel):
+    models: list[ModelInfo] = Field(..., title="Models")

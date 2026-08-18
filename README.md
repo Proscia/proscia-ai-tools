@@ -15,7 +15,7 @@ Concentriq® Embeddings is a backend service that provides foundation model embe
 
 Through Concentriq® Embeddings, developers can access some of the most widely used foundation models, and Proscia plans to continue adding to the list of supported foundation models. Instead of wading through the ever-growing and dense literature attempting to crown a “best” foundation model for pathology, Concentriq® Embeddings allows researchers to easily try out many feature extractors on a downstream task, and future-proofs for the inevitably better foundation models of tomorrow.
 
-Currently supported foundation models include:
+Currently supported foundation models include (this list may lag behind what's actually enabled for your deployment — call `ClientWrapper.list_models()` for the authoritative, licensing-aware list):
 
 - DinoV2
   - Model Tag: `facebook/dinov2-base`
@@ -52,6 +52,11 @@ Currently supported foundation models include:
   - License: [Apache-2.0](https://choosealicense.com/licenses/apache-2.0/)
   - [🤗 HuggingFace page](https://huggingface.co/bioptimus/H-optimus-0)
   - [Paper](https://github.com/bioptimus/releases/tree/main/models/h-optimus/v0)
+- H-optimus-1
+  - Model Tag: `bioptimus/H-optimus-1`
+  - Patch Size: 224
+  - Embedding Dimension: 1536
+  - License: Licensed add-on — enablement is deployment-specific; use `list_models()` to check availability and licensing notes for your deployment
 - Virchow
   - Model Tag: `paige-ai/Virchow`
   - Patch Size: 224
@@ -102,6 +107,19 @@ from proscia_ai_tools.client import ClientWrapper as Client
 ce_api_client = Client(url=endpoint, email=email, password=pwd)
 ticket_id = ce_api_client.embed_repos(ids=[1234], model="bioptimus/H-optimus-0", mpp=1)
 embeddings = ce_api_client.get_embeddings(ticket_id)
+```
+
+`Client` supports three mutually-exclusive authentication methods:
+
+```python
+# Basic auth (email + password), exchanged internally for a JWT
+ce_api_client = Client(url=endpoint, email=email, password=pwd)
+
+# Pre-obtained JWT bearer token
+ce_api_client = Client(url=endpoint, token=jwt_token)
+
+# Concentriq API key
+ce_api_client = Client(url=endpoint, api_key=api_key)
 ```
 
 # Setup

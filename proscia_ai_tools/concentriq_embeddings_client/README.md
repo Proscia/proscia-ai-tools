@@ -11,6 +11,7 @@ The client provides the following methods:
 - `get_job_status(ticket: str) -> StatusResponse`: Method to get the status of a job.
 - `fetch_results(ticket: str, offset: int = 0, limit: int = 100) -> JobOutput`: Method to fetch results of a job.
 - `poll_for_completion_and_fetch_results(ticket: str, check_interval: int = 5) -> JobOutput`: Polls job status and fetches results once complete.
+- `list_models() -> ModelsListResponse`: Method to list the foundation models available for creating embeddings in this deployment.
 
 Here is an example of how to use the client
 
@@ -54,7 +55,7 @@ In [3]: data = {
 In [4]: estimate_job_response = client.estimate_job_cost(data)
 
 In [5]: estimate_job_response
-Out[5]: EstimationResponse(job_duration_m=100.23184276163612, before_job_m=98582.71392620936, after_job_m=98482.48208344771, num_invalid_images=None, invalid_image_ids=None)
+Out[5]: EstimationResponse(job_cost=100.23, credits_before_job=98582.71, credits_after_job=98482.48, invalid_images=None)
 ```
 
 ### Submit Job
@@ -81,4 +82,13 @@ Out[9]: StatusResponse(status='queued', progress=0.0, finished=0, failed=0, queu
 In [10]: results = client.fetch_results(submit_job_response.ticket_id)
 In [11]: results
 Out[11]: JobOutput(images=[ImageOutput(image_id=6564, repository_id=None, status='finished', model='facebook/dinov2-base', patch_size=224, grid_rows=12, grid_cols=11, pad_height=118, pad_width=221, mpp=10.0, embeddings_url='https://embeddings-api.s3.amazonaws.com/output/f27a5f50-a298-4761-9dd7-8eafc25bbb90_6564.safetensors?AWSAccessKeyId=AXXXXXXXX', thumb_url='https://embeddings-api.s3.amazonaws.com/output/f27a5f50-a298-4761-9dd7-8eafc25bbb90_6564.png?AWSAccessKeyId=AXXXXXXXX', thumb_mpp=7.0])
+```
+
+### List Available Models
+
+```python
+In [12]: models_response = client.list_models()
+
+In [13]: models_response
+Out[13]: ModelsListResponse(models=[ModelInfo(model='facebook/dinov2-base', display_name='DinoV2', patch_size=224, embedding_dimension=768, license='Apache-2.0', license_url='https://choosealicense.com/licenses/apache-2.0/', huggingface_url='https://huggingface.co/facebook/dinov2-base', paper_url='https://arxiv.org/abs/2304.07193', notes=None), ...])
 ```

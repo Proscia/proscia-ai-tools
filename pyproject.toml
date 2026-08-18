@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "proscia-ai-tools"
-version = "0.1.0"
+version = "0.2.0"
 description = "This is a software contains python code to interact with the Proscia Foundation Embedder API."
 authors = ["Proscia AI Team <ai_team@proscia.com>"]
 packages = [
