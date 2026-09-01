@@ -148,6 +148,37 @@ def test_get_annotations(mock_get, ls_client):
     assert annotations["annotations"][0]["name"] == "annotation"
 
 
+@patch("requests.Session.get")
+def test_get_metadata_fields(mock_get, ls_client):
+    mock_get.return_value = mock_response(
+        json_data='{"data": {"fields": [{"id": 3703, "name": "PD-L1 tumor +", "imageSetId": 1918}]}}'
+    )
+    fields = ls_client.get_metadata_fields(image_set_id=1918, resource_type="image")
+    assert fields["fields"][0]["id"] == 3703
+
+    sent_filters = json.loads(mock_get.call_args.kwargs["params"]["filters"])
+    assert sent_filters == {"imageSetId": [1918], "resourceType": ["image"]}
+
+
+@patch("requests.Session.post")
+def test_get_metadata_values(mock_post, ls_client):
+    mock_post.return_value = mock_response(json_data='{"data": [{"fieldId": 3703, "resourceId": 7, "content": 1}]}')
+    values = ls_client.get_metadata_values(image_ids=[7])
+    assert values == [{"fieldId": 3703, "resourceId": 7, "content": 1}]
+    assert mock_post.call_args.kwargs["json"] == {"filters": {"imageId": [7]}}
+
+
+@patch("requests.Session.post")
+def test_get_metadata_values_nested_envelope(mock_post, ls_client):
+    """Some deployments nest the values under a "metadataValues" key."""
+    mock_post.return_value = mock_response(
+        json_data='{"data": {"metadataValues": [{"fieldId": 3703, "resourceId": 7, "content": 1}]}}'
+    )
+    values = ls_client.get_metadata_values(image_set_id=1918)
+    assert values == [{"fieldId": 3703, "resourceId": 7, "content": 1}]
+    assert mock_post.call_args.kwargs["json"] == {"filters": {"imageSetId": [1918]}}
+
+
 # --- ConcentriqLSClient auth tests ---
 
 

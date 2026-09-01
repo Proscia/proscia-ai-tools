@@ -501,6 +501,83 @@ class ConcentriqLSClient:
 
         return annotations_response_dict["data"]
 
+    def get_metadata_fields(self, image_set_id: int | None = None, resource_type: str | None = None) -> dict:
+        """Get metadata field (column) definitions from Concentriq.
+
+        Metadata fields are the user-defined columns attached to a resource - for example a
+        "PD-L1 status" column on the images of a study. Fields scoped to a single image set
+        carry that set's id in ``imageSetId``; organization-wide fields have ``imageSetId``
+        of ``None`` and are returned by this call as well, so callers filtering to one study
+        should discard the ones whose ``imageSetId`` does not match.
+
+        Parameters:
+        ----------
+        image_set_id: "int" id of an image set (repo) to filter by. This is an optional filter.
+        resource_type: "str" one of "image", "imageSet", "folder", "annotation" or "analysis".
+            This is an optional filter.
+
+        Returns:
+        -------
+        'dict' with key "fields" and value a 'list' of field definitions, each with an "id",
+        "name", "contentType", "resourceType" and "imageSetId".
+        """
+        filters: dict = {}
+        if image_set_id is not None:
+            filters["imageSetId"] = [image_set_id]
+        if resource_type is not None:
+            filters["resourceType"] = [resource_type]
+
+        fields_request_filters = {"filters": json.dumps(filters)}
+        fields_response_dict = self.paginated_get_query(
+            f"{self.endpoint}/metadata-fields", params=fields_request_filters
+        )
+
+        return fields_response_dict["data"]
+
+    @catch_auth_exceptions
+    def get_metadata_values(self, image_ids: list[int] | None = None, image_set_id: int | None = None) -> list[dict]:
+        """Get metadata values for images from Concentriq.
+
+        Values are keyed by field rather than by name, so pair this with
+        :meth:`get_metadata_fields` to resolve each ``fieldId`` to a column name.
+
+        This is issued as a POST rather than a GET because the filter carries the full list
+        of image ids, which overflows a query string for even modestly sized studies.
+
+        Parameters:
+        ----------
+        image_ids: "list" of image ids in Concentriq. This is an optional filter.
+        image_set_id: "int" id of an image set (repo) to filter by. This is an optional filter.
+
+        Returns:
+        -------
+        'list' of 'dict', each with keys "fieldId", "resourceId" (the image id) and "content"
+        (the value, coerced to the field's content type). Images with no value set for a field
+        are simply absent from the list.
+        """
+        resp = None
+        url = f"{self.endpoint}/metadata-values"
+        filters: dict = {}
+        if image_ids is not None:
+            filters["imageId"] = list(image_ids)
+        if image_set_id is not None:
+            filters["imageSetId"] = [image_set_id]
+
+        try:
+            resp = self.session.post(url, json={"filters": filters})
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as error:
+            self.log_http_error(
+                error,
+                req={"path": url, "data": {"filters": filters}},
+                resp=resp.text if resp is not None else None,
+            )
+            raise
+
+        data = resp.json()["data"]
+        # The envelope varies by deployment: the values are either returned bare or nested.
+        return data["metadataValues"] if isinstance(data, dict) else data
+
     def log_http_error(self, error: requests.exceptions.HTTPError, req=None, resp=None):
         """
         Method to log unsuccessfull http requests.

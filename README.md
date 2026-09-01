@@ -129,3 +129,18 @@ ce_api_client = Client(url=endpoint, api_key=api_key)
 ```bash
 pip install git+https://github.com/Proscia/proscia-ai-tools.git
 ```
+
+# Example notebooks
+
+Each notebook in [`notebooks/`](notebooks) is self-contained and expects a `creds.yml`
+alongside it holding your `url` and one authentication method.
+
+| Notebook                                                                                             | What it shows                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`mil-pdl1-h-optimus-1.ipynb`](notebooks/mil-pdl1-h-optimus-1.ipynb)                                 | End to end: tissue detection, H-optimus-1 embeddings over a cohort, an attention-based MIL classifier predicting PD-L1 status from H&E, and attention pushed back to Concentriq as an overlay |
+| [`regions-of-interest.ipynb`](notebooks/regions-of-interest.ipynb)                                   | Selecting regions from a thumbnail and embedding only those                                                                                                                                   |
+| [`annotation-based-regions-of-interest.ipynb`](notebooks/annotation-based-regions-of-interest.ipynb) | Driving region selection from existing Concentriq annotations                                                                                                                                 |
+| [`segmentation.ipynb`](notebooks/segmentation.ipynb)                                                 | Training a tile classifier on embeddings and scoring it against ground-truth masks                                                                                                            |
+| [`zero-shot-classification.ipynb`](notebooks/zero-shot-classification.ipynb)                         | Scoring tiles against PLIP text prompts, with no training                                                                                                                                     |
+| [`clustering.ipynb`](notebooks/clustering.ipynb)                                                     | Unsupervised exploration of embedding space                                                                                                                                                   |
+| [`annotations.ipynb`](notebooks/annotations.ipynb)                                                   | Writing masks back into Concentriq as annotations                                                                                                                                             |

@@ -102,6 +102,82 @@ def overlay_mask(
     return overlay
 
 
+def tissue_regions(
+    thumbnail: np.ndarray, embedding_mpp: float, patch_size: int = 224, thumbnail_mpp: float = 7.0
+) -> tuple[np.ndarray, list[dict]]:
+    """Detect tissue on a thumbnail and express it on the embedding tile grid.
+
+    Uses Otsu thresholding to separate stained tissue from background, then reports which
+    tiles of the embedding grid contain any tissue. The returned regions are bounding boxes
+    at thumbnail resolution, ready to hand to `ClientWrapper.embed_roi`, so that background
+    is never embedded. Horizontally adjacent tissue tiles are merged into a single box to
+    keep the request small; the boxes stay aligned to the tile grid either way, so the grid
+    coordinates of the returned embeddings are unaffected.
+
+    Parameters
+    ----------
+    thumbnail : np.ndarray
+        Thumbnail image, as supplied by `ClientWrapper.get_thumbnails`
+    embedding_mpp : float
+        Microns per pixel at which embeddings will be requested
+    patch_size : int, optional
+        Patch size of the embedding model in pixels, by default 224
+    thumbnail_mpp : float, optional
+        Microns per pixel of the thumbnail, by default 7.0 which is what Concentriq supplies
+
+    Returns
+    -------
+    Tuple[np.ndarray, List[Dict]]
+        A boolean tissue mask of shape (grid_rows, grid_cols) over the embedding tile grid,
+        and a list of bounding boxes with keys "x", "y", "width" and "height" at thumbnail
+        resolution. The service may return slightly fewer tiles than the mask selects, so
+        index results by the grid keys it returns rather than assuming the two agree.
+    """
+    img = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2GRAY)
+    _, thresholded = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Remove speckle, then bridge the gaps within a tissue section.
+    raw_mask = (thresholded == 0).astype(np.uint8)
+    noise_mask = cv2.morphologyEx(raw_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    filled_mask = cv2.morphologyEx(noise_mask, cv2.MORPH_CLOSE, np.ones((100, 100), np.uint8))
+
+    thumb_px_per_tile = round(patch_size * embedding_mpp / thumbnail_mpp)
+    # Round up so the grid matches the one the embeddings service reports, which pads the
+    # slide out to a whole number of tiles.
+    grid_rows = -(-thumbnail.shape[0] // thumb_px_per_tile)
+    grid_cols = -(-thumbnail.shape[1] // thumb_px_per_tile)
+
+    tile_mask = np.zeros((grid_rows, grid_cols), dtype=bool)
+    for row in range(grid_rows):
+        for col in range(grid_cols):
+            y_start, x_start = row * thumb_px_per_tile, col * thumb_px_per_tile
+            tile = filled_mask[y_start : y_start + thumb_px_per_tile, x_start : x_start + thumb_px_per_tile]
+            tile_mask[row, col] = tile.sum() > 0
+
+    regions = []
+    for row in range(grid_rows):
+        # Emit one box per run of consecutive tissue tiles rather than one box per tile.
+        col = 0
+        while col < grid_cols:
+            if not tile_mask[row, col]:
+                col += 1
+                continue
+            run_end = col
+            while run_end < grid_cols and tile_mask[row, run_end]:
+                run_end += 1
+            regions.append(
+                {
+                    "x": int(col * thumb_px_per_tile),
+                    "y": int(row * thumb_px_per_tile),
+                    "width": int((run_end - col) * thumb_px_per_tile),
+                    "height": int(thumb_px_per_tile),
+                }
+            )
+            col = run_end
+
+    return tile_mask, regions
+
+
 def parse(emb_dict: dict[str, torch.Tensor]) -> tuple[list[str], dict[str, list[int]]]:
     """
     Parse the embeddings dictionary into sorted keys and a dictionary of coordinates.

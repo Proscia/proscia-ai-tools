@@ -10,6 +10,7 @@ from proscia_ai_tools.utils import (
     calculate_iou,
     parse,
     tile_thumbnail,
+    tissue_regions,
 )
 
 
@@ -55,6 +56,39 @@ def test_parse():
     sorted_keys, coordinates = parse(emb_dict)
     assert sorted_keys == ["0_0", "0_1"]
     assert coordinates == {"0_0": [0, 0], "0_1": [0, 1]}
+
+
+def test_tissue_regions():
+    # 640x640 thumbnail at 7mpp, embedded at 1mpp with 224px patches => 32 thumbnail px per
+    # tile, so a 20x20 tile grid. The dark block spans tile rows 4-11 and cols 4-15.
+    thumbnail = np.full((640, 640, 3), 255, dtype=np.uint8)
+    thumbnail[128:384, 128:512] = 30
+
+    mask, regions = tissue_regions(thumbnail, embedding_mpp=1.0)
+
+    assert mask.shape == (20, 20)
+    assert mask[6, 6]
+    assert not mask[0, 0]
+    # Gap-filling dilates the block by at most a tile in each direction.
+    rows, cols = np.where(mask.any(axis=1))[0], np.where(mask.any(axis=0))[0]
+    assert 3 <= rows.min() <= 4
+    assert 11 <= rows.max() <= 12
+    assert 3 <= cols.min() <= 4
+    assert 15 <= cols.max() <= 16
+
+    # Runs of adjacent tiles are merged, so there is one box per tissue-bearing grid row.
+    assert len(regions) == len(rows)
+    assert sum(r["width"] // 32 for r in regions) == mask.sum()
+    for region in regions:
+        assert region["height"] == 32
+        assert region["x"] % 32 == 0
+        assert region["y"] % 32 == 0
+
+
+def test_tissue_regions_blank_thumbnail():
+    mask, regions = tissue_regions(np.full((640, 640, 3), 255, dtype=np.uint8), embedding_mpp=1.0)
+    assert not mask.any()
+    assert regions == []
 
 
 def test_stack_embedding():
