@@ -65,7 +65,7 @@ Both clients use bearer token auth obtained via basic auth to `/api/v3/auth/toke
 
 ### Supported Foundation Models
 
-DinoV2, PLIP, ConvNext, CTransPath, H-optimus-0, Virchow (see README for model tags and embedding dimensions).
+DinoV2, PLIP, ConvNext, CTransPath, H-optimus-0, H-optimus-1, Virchow (see README for model tags and embedding dimensions). H-optimus-1 is a licensed add-on enabled per deployment — call `list_models()` to check.
 
 ## Code Style
 

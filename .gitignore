@@ -1,4 +1,7 @@
 notebooks/data
+notebooks/creds.yml
+notebooks/*.demo-guide.md
+notebooks/*.engineering-notes.md
 docs/source
 
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
